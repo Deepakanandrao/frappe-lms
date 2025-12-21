@@ -94,6 +94,10 @@ It takes care of installation, setup, upgrades, monitoring, maintenance and supp
 
 Follow these steps to set up Frappe Learning in production:
 
+#### Easy Docker Deployment (Recommended)
+For a simple, one-command deployment using Docker or Coolify, see the [Production Docker Setup](./docker/production/README.md).
+
+#### Easy Install Script
 **Step 1**: Download the easy install script
 
 ```bash
