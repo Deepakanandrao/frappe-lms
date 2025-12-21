@@ -25,10 +25,10 @@ docker compose up -d
 
 ## Default Credentials
 
-| Account        | Username      | Password |
-|----------------|---------------|----------|
-| Frappe Admin   | Administrator | admin    |
-| MariaDB Root   | root          | admin    |
+| Account      | Username      | Password |
+| ------------ | ------------- | -------- |
+| Frappe Admin | Administrator | admin    |
+| MariaDB Root | root          | admin    |
 
 > ⚠️ **Change these in production!** Edit the `.env` file before first deployment.
 
@@ -40,26 +40,25 @@ All variables have sensible defaults. Copy `.env.example` to `.env` and modify a
 
 ### Essential Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SITE_NAME` | `lms.localhost` | Your site/domain name |
-| `FRAPPE_ADMIN_PASSWORD` | `admin` | Administrator password |
-| `MARIADB_ROOT_PASSWORD` | `admin` | Database root password |
-| `HOST_EXPOSED_PORT` | `80` | Port to access the app |
+| Variable                | Default         | Description            |
+| ----------------------- | --------------- | ---------------------- |
+| `SITE_NAME`             | `lms.localhost` | Your site/domain name  |
+| `FRAPPE_ADMIN_PASSWORD` | `admin`         | Administrator password |
+| `MARIADB_ROOT_PASSWORD` | `admin`         | Database root password |
 
 ### Image Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
+| Variable      | Default  | Description                       |
+| ------------- | -------- | --------------------------------- |
 | `LMS_VERSION` | `stable` | Image tag: stable, latest, v1.x.x |
-| `PULL_POLICY` | `always` | Docker pull policy |
+| `PULL_POLICY` | `always` | Docker pull policy                |
 
 ### Network/Proxy Settings
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `CLIENT_MAX_BODY_SIZE` | `50m` | Max upload file size |
-| `PROXY_READ_TIMEOUT` | `120` | Request timeout (seconds) |
+| Variable                   | Default     | Description                    |
+| -------------------------- | ----------- | ------------------------------ |
+| `CLIENT_MAX_BODY_SIZE`     | `50m`       | Max upload file size           |
+| `PROXY_READ_TIMEOUT`       | `120`       | Request timeout (seconds)      |
 | `UPSTREAM_REAL_IP_ADDRESS` | `127.0.0.1` | Proxy IP (for X-Forwarded-For) |
 
 ---
@@ -93,18 +92,18 @@ All variables have sensible defaults. Copy `.env.example` to `.env` and modify a
 
 ### Services
 
-| Service | Description |
-|---------|-------------|
-| `frontend` | Nginx reverse proxy, serves static files |
-| `backend` | Frappe/LMS application (Gunicorn) |
-| `websocket` | Real-time updates (Socket.io) |
-| `scheduler` | Periodic background tasks |
-| `queue-short` | Short-running background jobs |
-| `queue-long` | Long-running background jobs |
-| `db` | MariaDB database |
-| `redis` | Cache and message queue |
-| `configurator` | One-time setup (runs on first start) |
-| `create-site` | One-time site creation (runs on first start) |
+| Service        | Description                                  |
+| -------------- | -------------------------------------------- |
+| `frontend`     | Nginx reverse proxy, serves static files     |
+| `backend`      | Frappe/LMS application (Gunicorn)            |
+| `websocket`    | Real-time updates (Socket.io)                |
+| `scheduler`    | Periodic background tasks                    |
+| `queue-short`  | Short-running background jobs                |
+| `queue-long`   | Long-running background jobs                 |
+| `db`           | MariaDB database                             |
+| `redis`        | Cache and message queue                      |
+| `configurator` | One-time setup (runs on first start)         |
+| `create-site`  | One-time site creation (runs on first start) |
 
 ---
 
@@ -131,14 +130,13 @@ Click **Save**. Coolify will parse the file and show you all 10 services.
 
 Go to the **Environment Variables** tab and add these variables:
 
-| Variable | Value | Description |
-|----------|-------|-------------|
-| `SITE_NAME` | `your-domain.com` | Your domain name (e.g., `onboarding.psympl.com`) |
-| `FRAPPE_ADMIN_PASSWORD` | `your_secure_password` | Admin login password |
-| `MARIADB_ROOT_PASSWORD` | `your_secure_db_password` | Database root password |
-| `HOST_EXPOSED_PORT` | `8080` | Internal port (Coolify proxies 80/443 to this) |
+| Variable                | Value                     | Description                                      |
+| ----------------------- | ------------------------- | ------------------------------------------------ |
+| `SITE_NAME`             | `your-domain.com`         | Your domain name (e.g., `onboarding.psympl.com`) |
+| `FRAPPE_ADMIN_PASSWORD` | `your_secure_password`    | Admin login password                             |
+| `MARIADB_ROOT_PASSWORD` | `your_secure_db_password` | Database root password                           |
 
-> **Important:** Set `HOST_EXPOSED_PORT=8080` because Coolify's reverse proxy handles external ports 80/443 and SSL.
+> **Note:** No port mapping is needed - Coolify connects to containers via Docker's internal network.
 
 ### Step 4: Configure Domain for Frontend Service
 
@@ -155,16 +153,19 @@ Go to the **Environment Variables** tab and add these variables:
 ### Troubleshooting Coolify Deployment
 
 **Services stuck in "Starting":**
-- Check the `configurator` logs first - it must complete before others start
-- Then check `create-site` logs for database connection errors
+
+-   Check the `configurator` logs first - it must complete before others start
+-   Then check `create-site` logs for database connection errors
 
 **"Site not found" after deployment:**
-- Verify `SITE_NAME` matches exactly what you set in Environment Variables
-- Check that the **frontend** service has `FRAPPE_SITE_NAME_HEADER` set correctly
+
+-   Verify `SITE_NAME` matches exactly what you set in Environment Variables
+-   Check that the **frontend** service has `FRAPPE_SITE_NAME_HEADER` set correctly
 
 **502 Bad Gateway:**
-- The backend may still be starting - wait 1-2 more minutes
-- Check backend logs for errors
+
+-   The backend may still be starting - wait 1-2 more minutes
+-   Check backend logs for errors
 
 ---
 
@@ -236,24 +237,28 @@ docker compose up -d
 ### Site Not Loading After Deployment
 
 1. **Check initialization completed:**
-   ```bash
-   docker compose logs create-site
-   ```
-   Look for "Site setup complete!" message.
+
+    ```bash
+    docker compose logs create-site
+    ```
+
+    Look for "Site setup complete!" message.
 
 2. **Check all services are running:**
-   ```bash
-   docker compose ps
-   ```
+
+    ```bash
+    docker compose ps
+    ```
 
 3. **Check backend logs:**
-   ```bash
-   docker compose logs backend
-   ```
+    ```bash
+    docker compose logs backend
+    ```
 
 ### "Site not found" Error
 
 The `SITE_NAME` must match exactly. Check:
+
 ```bash
 # List created sites
 docker compose exec backend ls sites/
@@ -275,6 +280,7 @@ docker compose exec backend bench --site lms.localhost mariadb
 ### Permission Issues
 
 If running on Linux, you may need to fix permissions:
+
 ```bash
 # Check the frappe user UID (usually 1000)
 docker compose exec backend id frappe
@@ -291,18 +297,19 @@ By default, Docker named volumes are used. To use host directories instead (for 
 
 ```yaml
 services:
-  backend:
-    volumes:
-      - ./data/sites:/home/frappe/frappe-bench/sites
-      - ./data/logs:/home/frappe/frappe-bench/logs
-  # ... apply to all services using sites/logs volumes ...
-  
-  db:
-    volumes:
-      - ./data/mariadb:/var/lib/mysql
+    backend:
+        volumes:
+            - ./data/sites:/home/frappe/frappe-bench/sites
+            - ./data/logs:/home/frappe/frappe-bench/logs
+    # ... apply to all services using sites/logs volumes ...
+
+    db:
+        volumes:
+            - ./data/mariadb:/var/lib/mysql
 ```
 
 Then create the directories before starting:
+
 ```bash
 mkdir -p data/sites data/logs data/mariadb
 ```
