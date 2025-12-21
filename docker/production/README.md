@@ -112,39 +112,59 @@ All variables have sensible defaults. Copy `.env.example` to `.env` and modify a
 
 Coolify handles reverse proxy and SSL automatically.
 
-### Step 1: Create a New Service
+### Step 1: Create a New Docker Compose Service
 
-1. In Coolify, go to your project
-2. Click **"Add New Resource"** → **"Docker Compose"**
-3. Connect your repository and set the compose file path:
-   ```
-   docker/production/docker-compose.yml
-   ```
+1. In Coolify, go to your project (e.g., `Homelab > production`)
+2. Click **"Add New Resource"**
+3. Under **"Docker Based"**, select **"Docker Compose Empty"**
+4. You'll see an empty editor with "Start typing here"
 
-### Step 2: Configure Environment Variables
+### Step 2: Paste the Docker Compose Content
 
-Add these in the Coolify **Environment Variables** section:
+Copy the entire contents of `docker-compose.yml` from this folder and paste it into the editor.
 
-```env
-SITE_NAME=your-domain.com
-FRAPPE_ADMIN_PASSWORD=your_secure_password
-MARIADB_ROOT_PASSWORD=your_secure_db_password
-HOST_EXPOSED_PORT=8080
-```
+> **Tip:** You can copy it from `docker/production/docker-compose.yml` in this repository.
 
-> **Important:** Set `HOST_EXPOSED_PORT=8080` because Coolify's proxy handles port 80/443.
+Click **Save**. Coolify will parse the file and show you all 10 services.
 
-### Step 3: Configure Domain
+### Step 3: Configure Environment Variables
 
-In the **General** settings:
-- Set **Domains** to your domain (e.g., `https://your-domain.com`)
-- Ensure **Port** is set to `8080` (the frontend nginx port)
+Go to the **Environment Variables** tab and add these variables:
 
-### Step 4: Deploy
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `SITE_NAME` | `your-domain.com` | Your domain name (e.g., `onboarding.psympl.com`) |
+| `FRAPPE_ADMIN_PASSWORD` | `your_secure_password` | Admin login password |
+| `MARIADB_ROOT_PASSWORD` | `your_secure_db_password` | Database root password |
+| `HOST_EXPOSED_PORT` | `8080` | Internal port (Coolify proxies 80/443 to this) |
 
-Click **Deploy** and wait for initialization (~2-3 minutes).
+> **Important:** Set `HOST_EXPOSED_PORT=8080` because Coolify's reverse proxy handles external ports 80/443 and SSL.
 
-Check the logs for the `create-site` service to confirm the site was created successfully.
+### Step 4: Configure Domain for Frontend Service
+
+1. Click on the **frontend** service
+2. In **General** settings, set **Domains** to your domain (e.g., `https://your-domain.com`)
+3. Ensure **Port** is set to `8080`
+
+### Step 5: Deploy
+
+1. Click **Deploy** and wait for initialization (~2-3 minutes)
+2. Check the logs for the **create-site** service - look for "Site setup complete!"
+3. Once all services are green, visit your domain
+
+### Troubleshooting Coolify Deployment
+
+**Services stuck in "Starting":**
+- Check the `configurator` logs first - it must complete before others start
+- Then check `create-site` logs for database connection errors
+
+**"Site not found" after deployment:**
+- Verify `SITE_NAME` matches exactly what you set in Environment Variables
+- Check that the **frontend** service has `FRAPPE_SITE_NAME_HEADER` set correctly
+
+**502 Bad Gateway:**
+- The backend may still be starting - wait 1-2 more minutes
+- Check backend logs for errors
 
 ---
 
