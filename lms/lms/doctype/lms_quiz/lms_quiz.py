@@ -136,7 +136,13 @@ def _validate_quiz_results(results):
 
 
 @frappe.whitelist()
-def submit_quiz(quiz: str, results: str | None = None):
+def submit_quiz(
+	quiz: str,
+	results: str | None = None,
+	violation_count: int = 0,
+	submission_reason: str = "manual",
+	violation_events: str | None = None,
+):
 	results = _parse_json_arg(results, _("quiz results")) if results else []
 	if not isinstance(results, list):
 		frappe.throw(_("Invalid quiz results submitted."), frappe.ValidationError)
@@ -166,10 +172,20 @@ def submit_quiz(quiz: str, results: str | None = None):
 	# runs validate_marks() + set_percentage() on save. Read them back rather
 	# than recomputing here, so the two paths can't drift.
 	submission = create_submission(
-		quiz, data["results"], quiz_details.total_marks, quiz_details.passing_percentage
+		quiz,
+		data["results"],
+		quiz_details.total_marks,
+		quiz_details.passing_percentage,
+		violation_count=int(violation_count or 0),
+		submission_reason=submission_reason or "manual",
 	)
 	percentage = submission.percentage or 0
 	save_progress_after_quiz(quiz_details, percentage)
+
+	if violation_events:
+		events = _parse_json_arg(violation_events, _("violation events"))
+		if isinstance(events, list):
+			_save_violation_events(submission.name, events)
 
 	return {
 		"score": submission.score,
@@ -179,6 +195,72 @@ def submit_quiz(quiz: str, results: str | None = None):
 		"percentage": percentage,
 		"is_open_ended": is_open_ended,
 	}
+
+
+def _save_violation_events(submission_name: str, events: list):
+	from frappe.utils import now as _now
+	valid_types = {"tab_switch", "no_face", "multiple_faces", "focus_loss", "camera_disconnect"}
+	user = frappe.session.user
+	now = _now()
+	rows = []
+	for event in events:
+		event_type = event.get("eventType") or event.get("event_type", "")
+		severity = event.get("severity", "violation")
+		raw_ts = event.get("timestamp") or ""
+		# JS toISOString() → "2026-07-31T08:38:00.000Z"; normalise to MariaDB datetime
+		try:
+			timestamp = raw_ts.replace("T", " ").replace("Z", "")[:19] if raw_ts else now
+		except Exception:
+			timestamp = now
+		if event_type not in valid_types:
+			continue
+		if severity not in ("violation", "warning"):
+			severity = "violation"
+		rows.append((
+			frappe.generate_hash(length=10),  # name
+			now,                              # creation
+			now,                              # modified
+			user,                             # modified_by
+			user,                             # owner
+			0,                                # docstatus
+			0,                                # idx
+			submission_name,                  # quiz_submission
+			event_type,                       # event_type
+			severity,                         # severity
+			timestamp,                        # timestamp
+		))
+	if rows:
+		frappe.db.bulk_insert(
+			"LMS Quiz Violation Log",
+			fields=["name", "creation", "modified", "modified_by", "owner",
+					"docstatus", "idx", "quiz_submission", "event_type", "severity", "timestamp"],
+			values=rows,
+		)
+
+
+@frappe.whitelist()
+def is_open_ended_submission(submission: str) -> bool:
+	quiz = frappe.db.get_value("LMS Quiz Submission", submission, "quiz")
+	if not quiz:
+		return False
+	question_type = frappe.db.get_value("LMS Quiz Question", {"parent": quiz}, "type")
+	return question_type == "Open Ended"
+
+
+@frappe.whitelist()
+def get_quiz_violation_logs(submission: str):
+	if not frappe.db.exists("LMS Quiz Submission", submission):
+		frappe.throw(_("Invalid submission."), frappe.ValidationError)
+	if not (frappe.db.get_value("LMS Quiz Submission", submission, "member") == frappe.session.user
+		or frappe.has_permission("LMS Quiz Submission", "read", submission)):
+		frappe.throw(_("Insufficient Permission"), frappe.PermissionError)
+	return frappe.get_all(
+		"LMS Quiz Violation Log",
+		filters={"quiz_submission": submission},
+		fields=["event_type", "severity", "timestamp"],
+		order_by="timestamp asc",
+		ignore_permissions=True,
+	)
 
 
 def process_results(results: list, quiz_details: dict):
@@ -203,6 +285,7 @@ def process_results(results: list, quiz_details: dict):
 		result["question_name"] = question_details.question
 		result["question"] = question_details.question_detail
 		result["marks_out_of"] = question_details.marks
+		result["question_type"] = question_details.type
 
 		if question_details.type != "Open Ended":
 			if question_details.type == "User Input":
@@ -305,7 +388,14 @@ def get_corrupted_image_msg():
 	return _("Image: Corrupted Data Stream")
 
 
-def create_submission(quiz: str, results: list, score_out_of: int, passing_percentage: float):
+def create_submission(
+	quiz: str,
+	results: list,
+	score_out_of: int,
+	passing_percentage: float,
+	violation_count: int = 0,
+	submission_reason: str = "manual",
+):
 	submission = frappe.new_doc("LMS Quiz Submission")
 	# Score and percentage are calculated by the controller function
 	submission.update(
@@ -318,6 +408,8 @@ def create_submission(quiz: str, results: list, score_out_of: int, passing_perce
 			"member": frappe.session.user,
 			"percentage": 0,
 			"passing_percentage": passing_percentage,
+			"violation_count": violation_count,
+			"submission_reason": submission_reason,
 		}
 	)
 	submission.save(ignore_permissions=True)

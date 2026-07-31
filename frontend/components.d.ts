@@ -124,6 +124,7 @@ declare module 'vue' {
     PersonaTextStep: typeof import('./src/components/Persona/PersonaTextStep.vue')['default']
     PersonaToolIcon: typeof import('./src/components/PersonaToolIcon.vue')['default']
     Play: typeof import('./src/components/Icons/Play.vue')['default']
+    ProctoringMonitor: typeof import('./src/components/ProctoringMonitor.vue')['default']
     ProgressBar: typeof import('./src/components/ProgressBar.vue')['default']
     Question: typeof import('./src/components/Modals/Question.vue')['default']
     Quiz: typeof import('./src/components/Quiz.vue')['default']

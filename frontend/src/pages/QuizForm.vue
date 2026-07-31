@@ -245,6 +245,29 @@
 					:label="__('Marks to Deduct')"
 					variant="outline"
 				/>
+				<BooleanSwitch
+					v-model="quizDetails.doc.enable_proctoring"
+					size="sm"
+					:label="__('Enable Proctoring')"
+					:description="
+						__(
+							'Require camera access and monitor for violations during the quiz.'
+						)
+					"
+				/>
+				<FormControl
+					v-if="quizDetails.doc.enable_proctoring"
+					type="number"
+					v-model="quizDetails.doc.max_violations"
+					:label="__('Max Violations')"
+					:description="
+						__(
+							'Quiz auto-submits when this many violations are recorded.'
+						)
+					"
+					variant="outline"
+					:required="true"
+				/>
 			</div>
 		</div>
 	</div>
@@ -396,24 +419,29 @@ watch(
 	}
 )
 
+watch(
+	() => quizDetails.doc?.enable_proctoring,
+	(enabled) => {
+		if (enabled && !quizDetails.doc.max_violations) {
+			quizDetails.doc.max_violations = 3
+		}
+	}
+)
+
 const submitQuiz = (opts = {}) => {
 	// Nothing to save once the quiz has been deleted (doc is null) — guard so the
 	// autosave watcher and the onBeforeUnmount flush can't throw or re-insert it.
 	if (!quizDetails.doc) return
 	validateTitle()
-	quizDetails.setValue.submit(
-		{
-			...quizDetails.doc,
-			total_marks: calculateTotalMarks(),
-		},
+	quizDetails.doc.total_marks = calculateTotalMarks()
+	quizDetails.save.submit(
+		{},
 		{
 			onSuccess(data) {
-				quizDetails.doc.total_marks = data.total_marks
+				console.log(data)
 				if (!opts.silent) toast.success(__('Quiz updated successfully'))
 			},
 			onError(err) {
-				// Autosave failures stay quiet; the orange "unsaved" badge remains
-				// so the change isn't silently lost.
 				if (!opts.silent) toast.error(err.messages?.[0] || err)
 			},
 		}

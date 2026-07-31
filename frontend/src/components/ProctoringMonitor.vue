@@ -1,0 +1,259 @@
+<template>
+	<div class="flex flex-col min-h-0 h-full">
+		<!-- Setup phase -->
+		<template v-if="phase === 'setup'">
+			<div v-if="cameraError" class="bg-surface-red-1 text-ink-red-6 rounded-lg p-3 text-sm leading-5 mb-3">
+				{{ cameraError }}
+			</div>
+
+			<div class="relative rounded-xl overflow-hidden bg-surface-gray-3 flex-1 min-h-0">
+				<video
+					ref="videoEl"
+					autoplay
+					muted
+					playsinline
+					class="absolute inset-0 w-full h-full object-cover"
+				/>
+
+				<!-- Status overlay -->
+				<div
+					v-if="setupStatus !== 'ready'"
+					class="absolute bottom-0 inset-x-0 flex items-center justify-center gap-1.5 py-2 text-xs font-medium"
+					:class="{
+						'bg-black/50 text-white': setupStatus === 'loading' || setupStatus === 'detecting',
+						'bg-surface-red-2/90 text-ink-red-6': setupStatus === 'no_face' || setupStatus === 'multiple_faces',
+					}"
+				>
+					<span v-if="setupStatus === 'loading'" class="lucide-loader-2 size-3.5 animate-spin" />
+					<span v-else-if="setupStatus === 'no_face'" class="lucide-alert-circle size-3.5" />
+					<span v-else-if="setupStatus === 'multiple_faces'" class="lucide-users size-3.5" />
+					<span v-else class="lucide-scan-face size-3.5" />
+					{{ setupStatusLabel }}
+				</div>
+
+				<!-- Ready indicator -->
+				<div
+					v-else
+					class="absolute inset-0 ring-2 ring-inset ring-ink-green-5 rounded-xl pointer-events-none"
+				>
+					<div class="absolute top-2 right-2 flex items-center gap-1 bg-surface-green-1 text-ink-green-6 text-xs font-medium px-2 py-1 rounded-full">
+						<span class="lucide-check size-3" />
+						{{ __('Ready') }}
+					</div>
+				</div>
+			</div>
+		</template>
+
+		<!-- Monitoring phase: violation pill + off-screen video for face detection -->
+		<template v-if="phase === 'monitoring'">
+			<video
+				ref="videoEl"
+				autoplay
+				muted
+				playsinline
+				class="fixed pointer-events-none opacity-0"
+				style="width:160px;height:120px;left:-9999px;top:0;"
+			/>
+			<div
+				class="flex items-center gap-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+				:class="violationCount > 0 ? 'bg-surface-red-1 text-ink-red-6' : 'bg-surface-green-1 text-ink-green-6'"
+			>
+				<span class="lucide-camera size-4" />
+				{{ violationCount }} / {{ maxViolations }} {{ maxViolations == 1 ? __('violation') : __('violations') }}
+			</div>
+		</template>
+	</div>
+</template>
+
+<script setup>
+import * as faceapi from 'face-api.js'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+
+const props = defineProps({
+	maxViolations: { type: Number, required: true },
+	active: { type: Boolean, default: false },
+	violationCount: { type: Number, default: 0 },
+})
+
+const emit = defineEmits(['camera-ready', 'camera-lost', 'camera-denied', 'violation', 'warning'])
+
+const videoEl = ref(null)
+const phase = ref('setup')
+const setupStatus = ref('loading')
+const cameraError = ref('')
+
+let stream = null
+let setupInterval = null
+let monitorInterval = null
+let focusBlurTimer = null
+let noFaceStreak = 0
+let multiFaceStreak = 0
+const STREAK_THRESHOLD = 3
+let cameraReadyEmitted = false
+
+const setupStatusLabel = computed(() => {
+	const labels = {
+		loading: __('Loading camera…'),
+		detecting: __('Position your face in the frame'),
+		no_face: __('No face detected — look at the camera'),
+		multiple_faces: __('Multiple faces detected — only one person allowed'),
+		ready: __('Ready'),
+	}
+	return labels[setupStatus.value] || ''
+})
+
+// ─── Lifecycle ───────────────────────────────────────────────────────────────
+
+onMounted(async () => {
+	await startCamera()
+	// Monitoring instance mounts with active=true — skip setup, go straight to monitoring
+	if (props.active) {
+		clearInterval(setupInterval)
+		phase.value = 'monitoring'
+		// Wait for the monitoring <video> element to mount, then re-attach the stream
+		await nextTick()
+		if (videoEl.value && stream) videoEl.value.srcObject = stream
+		startMonitoring()
+	}
+})
+
+onUnmounted(() => {
+	stopAll()
+})
+
+// ─── Setup phase ─────────────────────────────────────────────────────────────
+
+const startCamera = async () => {
+	try {
+		stream = await navigator.mediaDevices.getUserMedia({ video: true })
+	} catch {
+		cameraError.value = __('Camera access was denied. Please allow camera access and reload.')
+		emit('camera-denied')
+		return
+	}
+
+	if (videoEl.value) {
+		videoEl.value.srcObject = stream
+	}
+
+	try {
+		await faceapi.nets.tinyFaceDetector.loadFromUri('/assets/lms/frontend/models')
+	} catch {
+		cameraError.value = __('Failed to load face detection models. Please reload.')
+		return
+	}
+
+	setupStatus.value = 'detecting'
+	setupInterval = setInterval(runSetupDetection, 800)
+}
+
+const runSetupDetection = async () => {
+	if (!videoEl.value || videoEl.value.readyState < 2) return
+	const detections = await faceapi.detectAllFaces(
+		videoEl.value,
+		new faceapi.TinyFaceDetectorOptions()
+	)
+	if (detections.length === 1) {
+		setupStatus.value = 'ready'
+	} else if (detections.length === 0) {
+		setupStatus.value = 'no_face'
+	} else {
+		setupStatus.value = 'multiple_faces'
+	}
+}
+
+// Emit camera-ready when face detected, camera-lost when it disappears again
+watch(setupStatus, (status, prev) => {
+	if (status === 'ready' && !cameraReadyEmitted) {
+		cameraReadyEmitted = true
+		emit('camera-ready')
+	} else if (status !== 'ready' && prev === 'ready') {
+		cameraReadyEmitted = false
+		emit('camera-lost')
+	}
+})
+
+// ─── Switch to monitoring when quiz starts ────────────────────────────────────
+
+watch(
+	() => props.active,
+	async (active) => {
+		if (active) {
+			clearInterval(setupInterval)
+			phase.value = 'monitoring'
+			await nextTick()
+			if (videoEl.value && stream) videoEl.value.srcObject = stream
+			startMonitoring()
+		}
+	}
+)
+
+// ─── Monitoring phase ─────────────────────────────────────────────────────────
+
+const startMonitoring = () => {
+	monitorInterval = setInterval(runMonitorDetection, 2000)
+	document.addEventListener('visibilitychange', onVisibilityChange)
+	window.addEventListener('blur', onWindowBlur)
+	window.addEventListener('focus', onWindowFocus)
+	const videoTrack = stream?.getVideoTracks?.()?.[0]
+	if (videoTrack) videoTrack.addEventListener('ended', onCameraDisconnect)
+}
+
+const runMonitorDetection = async () => {
+	if (!videoEl.value || videoEl.value.readyState < 2) return
+	const detections = await faceapi.detectAllFaces(
+		videoEl.value,
+		new faceapi.TinyFaceDetectorOptions()
+	)
+	if (detections.length === 0) {
+		noFaceStreak++
+		multiFaceStreak = 0
+		if (noFaceStreak >= STREAK_THRESHOLD) {
+			noFaceStreak = 0
+			emit('violation', 'no_face')
+		} else if (noFaceStreak >= 2) {
+			emit('warning', 'no_face')
+		}
+	} else if (detections.length > 1) {
+		multiFaceStreak++
+		noFaceStreak = 0
+		if (multiFaceStreak >= STREAK_THRESHOLD) {
+			multiFaceStreak = 0
+			emit('violation', 'multiple_faces')
+		} else if (multiFaceStreak >= 2) {
+			emit('warning', 'multiple_faces')
+		}
+	} else {
+		noFaceStreak = 0
+		multiFaceStreak = 0
+	}
+}
+
+const onVisibilityChange = () => {
+	if (document.visibilityState === 'hidden') emit('violation', 'tab_switch')
+}
+
+const onWindowBlur = () => {
+	// Tab switch is already handled by visibilitychange — skip to avoid duplicate events
+	if (document.visibilityState === 'hidden') return
+	focusBlurTimer = setTimeout(() => emit('violation', 'focus_loss'), 10_000)
+}
+
+const onWindowFocus = () => {
+	if (focusBlurTimer) { clearTimeout(focusBlurTimer); focusBlurTimer = null }
+}
+
+const onCameraDisconnect = () => emit('violation', 'camera_disconnect')
+
+// ─── Cleanup ──────────────────────────────────────────────────────────────────
+
+const stopAll = () => {
+	clearInterval(setupInterval)
+	clearInterval(monitorInterval)
+	clearTimeout(focusBlurTimer)
+	document.removeEventListener('visibilitychange', onVisibilityChange)
+	window.removeEventListener('blur', onWindowBlur)
+	window.removeEventListener('focus', onWindowFocus)
+	stream?.getTracks?.().forEach((t) => t.stop())
+}
+</script>
