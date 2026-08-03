@@ -4,17 +4,22 @@
 	>
 		<Breadcrumbs v-if="submissionDetails.doc" :items="breadcrumbs" />
 		<div class="flex gap-2 items-center">
-			<Badge
-				v-if="submissionDetails.isDirty"
-				:label="__('Not Saved')"
-				variant="subtle"
-				theme="orange"
-			/>
-			<ShortcutTooltip :label="__('Save')" combo="Mod+S">
-				<Button variant="solid" @click="saveSubmission()">
-					{{ __('Save') }}
-				</Button>
-			</ShortcutTooltip>
+			<span v-if="isOwnSubmission" class="text-sm text-ink-gray-7">
+				{{ __('You cannot grade your own submission.') }}
+			</span>
+			<template v-else>
+				<Badge
+					v-if="submissionDetails.isDirty"
+					:label="__('Not Saved')"
+					variant="subtle"
+					theme="orange"
+				/>
+				<ShortcutTooltip :label="__('Save')" combo="Mod+S">
+					<Button variant="solid" @click="saveSubmission()">
+						{{ __('Save') }}
+					</Button>
+				</ShortcutTooltip>
+			</template>
 		</div>
 	</header>
 
@@ -35,18 +40,18 @@
 				<div
 					v-for="(row, index) in submissionDetails.doc.result"
 					:key="row.name"
-					class="py-6 grid grid-cols-[1fr_auto] gap-10 items-start"
+					class="py-3 grid grid-cols-[1fr_auto] gap-10 items-start"
 				>
 					<div class="space-y-3 min-w-0">
-						<div class="flex items-start gap-2">
-							<span class="text-xs font-semibold text-ink-gray-4 uppercase tracking-wide shrink-0 mt-0.5">{{ __('Q{0}:').format(index + 1) }}</span>
+						<div class="flex items-baseline gap-2">
+							<span class="text-base font-semibold text-ink-gray-4 uppercase tracking-wide shrink-0">{{ __('Q{0}:').format(index + 1) }}</span>
 							<div class="flex items-start gap-2 min-w-0">
 								<div
-									class="text-sm text-ink-gray-9 leading-5"
+									class="text-base text-ink-gray-9 leading-6"
 									v-html="sanitizeRichHTML(row.question)"
 								/>
 								<span
-									class="size-1.5 rounded-full shrink-0 mt-1.5"
+									class="size-1.5 rounded-full shrink-0 mt-2"
 									:class="row.marks == row.marks_out_of
 										? 'bg-ink-green-5'
 										: row.marks > 0
@@ -58,7 +63,7 @@
 						<div class="space-y-1">
 							<span class="text-xs font-medium text-ink-gray-4 uppercase tracking-wide">{{ __('Answer') }}</span>
 							<div
-								class="text-sm text-ink-gray-6 leading-5"
+								class="text-base text-ink-gray-6 leading-6"
 								v-html="sanitizeRichHTML(row.answer)"
 							/>
 						</div>
@@ -169,7 +174,8 @@ import {
 	usePageMeta,
 	toast,
 } from 'frappe-ui'
-import { computed, watch, onMounted, inject } from 'vue'
+import { computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import ShortcutTooltip from '@/components/ShortcutTooltip.vue'
 import {
 	useKeyboardShortcuts,
@@ -297,16 +303,37 @@ const breadcrumbs = computed(() => {
 	]
 })
 
-const saveSubmission = () => {
+const isOwnSubmission = computed(
+	() => user.data?.is_instructor && submissionDetails.doc?.member === user.data?.name
+)
+
+const saveSubmission = (opts = {}) => {
+	if (isOwnSubmission.value) return
 	submissionDetails.save.submit(
 		{},
 		{
+			onSuccess() {
+				if (!opts.silent) toast.success(__('Saved'))
+			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
 			},
 		}
 	)
 }
+
+const autoSave = useDebounceFn(() => {
+	if (submissionDetails.isDirty) saveSubmission({ silent: true })
+}, 1000)
+
+watch(
+	() => submissionDetails.isDirty,
+	(dirty) => { if (dirty) autoSave() }
+)
+
+onBeforeUnmount(() => {
+	if (submissionDetails.isDirty) saveSubmission({ silent: true })
+})
 
 usePageMeta(() => ({
 	title: `${submissionDetails.doc?.quiz_title}`,
