@@ -19,7 +19,7 @@
 
 		<div
 			v-if="isMobile && lessonTotal"
-			class="flex items-center gap-2 border-b bg-surface-base px-3 py-2"
+			class="flex items-center gap-2 border-b bg-surface-base px-5 py-2.5"
 		>
 			<Button
 				variant="subtle"
@@ -98,7 +98,7 @@
 				}"
 			>
 				<div
-					class="sm:border-e pt-5 pb-10 h-full"
+					class="sm:border-e pt-8 sm:pt-5 pb-10 h-full"
 					:class="{
 						'w-full md:w-3/5 mx-auto border-none !pt-10': zenModeEnabled,
 					}"

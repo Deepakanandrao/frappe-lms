@@ -189,11 +189,11 @@ const MANIFEST: Record<string, Privacy[]> = {
 	'components/Controls/VideoPreviewField.vue': ['public', 'public'],
 	'components/Modals/EditCoverImage.vue': ['public'],
 	'components/UnsplashImageBrowser.vue': ['public'],
-	'pages/Courses/CourseThumbnailField.vue': ['public', 'public'],
+	'components/Courses/CourseThumbnailField.vue': ['public', 'public'],
 	// Deliberately not readable by other users.
 	'components/Assignment.vue': ['private', 'private', 'private'],
-	'components/Modals/ChapterModal.vue': ['private'],
 	'components/Modals/JobApplicationModal.vue': ['private'],
+	'pages/Forms/ChapterForm.vue': ['private'],
 	'components/Notes/Notes.vue': ['private'],
 	// Neither literal. `per-field` reads the field's own `public` flag and
 	// `computed` is any other expression. `undeclared` passes no uploadArgs at
@@ -205,24 +205,24 @@ const MANIFEST: Record<string, Privacy[]> = {
 	// than discovering it one broken image at a time.
 	'components/ContactUsEmail.vue': ['undeclared'],
 	'components/DiscussionReplies.vue': ['undeclared', 'undeclared'],
-	'components/Modals/AssignmentForm.vue': ['undeclared'],
 	'components/Modals/DiscussionModal.vue': ['undeclared'],
-	'components/Modals/EditProfile.vue': ['undeclared'],
-	'components/Modals/EmailTemplateModal.vue': ['undeclared'],
-	'components/Modals/Question.vue': ['undeclared'],
 	'components/Quiz.vue': ['undeclared'],
 	'components/Settings/EmailTemplate/EmailTemplateAdd.vue': ['undeclared'],
 	'components/Settings/EmailTemplate/EmailTemplateEdit.vue': ['undeclared'],
 	'components/Settings/SettingFields.vue': ['per-field'],
 	'components/UploadPlugin.vue': ['computed'],
+	'pages/Forms/AssignmentForm.vue': ['undeclared'],
+	'pages/Forms/AnnouncementForm.vue': ['undeclared'],
 	'pages/Batches/BatchForm.vue': ['undeclared'],
-	'pages/Batches/components/AnnouncementModal.vue': ['undeclared'],
-	'pages/Batches/components/NewBatchModal.vue': ['undeclared'],
-	'pages/Courses/CourseOverviewSection.vue': ['undeclared'],
-	'pages/Courses/NewCourseModal.vue': ['undeclared'],
+	'pages/Forms/EmailTemplateForm.vue': ['undeclared'],
+	'pages/Forms/NewBatchForm.vue': ['undeclared'],
+	'components/Courses/CourseOverviewSection.vue': ['undeclared'],
+	'pages/Forms/NewCourseForm.vue': ['undeclared'],
 	'pages/JobApplications.vue': ['undeclared'],
-	'pages/JobForm.vue': ['undeclared'],
-	'pages/ProgrammingExercises/ProgrammingExerciseForm.vue': ['undeclared'],
+	'pages/Forms/JobForm.vue': ['undeclared'],
+	'pages/Forms/ProfileEditForm.vue': ['undeclared'],
+	'pages/Forms/ProgrammingExerciseForm.vue': ['undeclared'],
+	'pages/Forms/QuizQuestionForm.vue': ['undeclared'],
 }
 
 describe('every uploader has the privacy the manifest states', () => {

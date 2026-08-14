@@ -305,7 +305,6 @@
 </template>
 
 <script setup>
-import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 import {
 	createDocumentResource,
 	createResource,
