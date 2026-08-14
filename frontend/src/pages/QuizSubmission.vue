@@ -1,12 +1,42 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
-	>
-		<Breadcrumbs v-if="submissionDetails.doc" :items="breadcrumbs" />
-		<div class="flex gap-2 items-center">
-			<span v-if="isOwnSubmission" class="text-sm text-ink-gray-7">
-				{{ __('You cannot grade your own submission.') }}
-			</span>
+	<PageHeader :breadcrumbs="breadcrumbs">
+		<template #actions>
+			<!-- The sentence is why the Save button is missing, so it has to stay
+			     reachable on a phone. A tooltip would not do it: there is no hover on
+			     a touch screen, so the header spells it out where it fits and hands
+			     it to a tappable popover where it does not. -->
+			<template v-if="isOwnSubmission">
+				<!-- No @click: #trigger renders as-child through reka's PopoverTrigger,
+				     which wires click, keyboard and aria itself. Toggling by hand as
+				     well opened and immediately reclosed it.
+				     `sm:hidden` belongs on the button, not on Popover: the component
+				     only binds $attrs on its legacy anchor path.
+				     The panel is portalled and positioned by `side`/`align`, so it
+				     must not carry absolute positioning of its own. -->
+				<Popover bare align="end" :offset="8">
+					<template #trigger>
+						<button
+							type="button"
+							class="flex items-center p-1 text-ink-gray-5 sm:hidden"
+							:aria-label="ownSubmissionNotice"
+						>
+							<span class="lucide-info size-4" aria-hidden="true" />
+						</button>
+					</template>
+					<template #default>
+						<p
+							class="w-56 rounded-lg bg-surface-base p-3 text-sm leading-5 text-ink-gray-7 shadow-2xl ring-1 ring-black ring-opacity-5"
+						>
+							{{ ownSubmissionNotice }}
+						</p>
+					</template>
+				</Popover>
+
+				<span class="hidden items-center gap-1.5 text-sm text-ink-gray-7 sm:flex">
+					<span class="lucide-info size-4 shrink-0" aria-hidden="true" />
+					{{ ownSubmissionNotice }}
+				</span>
+			</template>
 			<template v-else>
 				<Badge
 					v-if="submissionDetails.isDirty"
@@ -15,150 +45,260 @@
 					theme="orange"
 				/>
 				<ShortcutTooltip :label="__('Save')" combo="Mod+S">
-					<Button variant="solid" @click="saveSubmission()">
-						{{ __('Save') }}
-					</Button>
+					<HeaderButton
+						:label="__('Save')"
+						icon="lucide-check"
+						variant="solid"
+						@click="saveSubmission()"
+					/>
 				</ShortcutTooltip>
 			</template>
-		</div>
-	</header>
+		</template>
+	</PageHeader>
 
-	<div v-if="submissionDetails.doc" class="flex flex-col min-h-0 flex-1">
+	<PageBody>
+		<!-- Questions read as the page; the sidebar is a margin note about who sat
+		     it and how it went, so it stacks under them once there is no room for
+		     a second column. PageBody owns the one scroll box.
 
-		<!-- Page title -->
-		<div class="px-8 py-3 border-b">
-			<h1 class="text-2xl font-semibold text-ink-gray-9">
-				{{ submissionDetails.doc.quiz_title }}
-			</h1>
-		</div>
+		     The title sits in the grid rather than in PageBody's name strip so the
+		     sidebar rule starts level with it instead of below a full-width strip.
+		     Top padding therefore belongs to each column: on the grid it would sit
+		     above the rule and leave the same gap again. -->
+		<div
+			v-if="submissionDetails.doc"
+			class="grid lg:flex-1 lg:grid-cols-[minmax(0,1fr)_300px] lg:grid-rows-[auto_1fr]"
+		>
+			<!-- The rule belongs to this column, not to the sidebar blocks: they are
+			     only as tall as their own content, so a submission with no
+			     violations ended the line halfway down the page. Spanning both rows
+			     against a grid that fills the body carries it to the bottom. -->
+			<div
+				class="order-3 min-w-0 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:border-e"
+			>
+				<h1 class="text-lg-semibold mb-4 px-5 pt-5 text-ink-gray-9 lg:pe-10">
+					{{ submissionDetails.doc.quiz_title }}
+				</h1>
 
-		<!-- Two-panel -->
-		<div class="grid min-h-0 flex-1 grid-cols-[1fr_300px]">
-
-			<!-- Left: Questions -->
-			<div class="overflow-y-auto divide-y px-8">
-				<div
-					v-for="(row, index) in submissionDetails.doc.result"
-					:key="row.name"
-					class="py-3 grid grid-cols-[1fr_auto] gap-10 items-start"
-				>
-					<div class="space-y-3 min-w-0">
-						<div class="flex items-baseline gap-2">
-							<span class="text-base font-semibold text-ink-gray-4 uppercase tracking-wide shrink-0">{{ __('Q{0}:').format(index + 1) }}</span>
-							<div class="flex items-start gap-2 min-w-0">
+				<div class="divide-y">
+					<div
+						v-for="(row, index) in submissionDetails.doc.result"
+						:key="row.name"
+						class="flex flex-col gap-3 px-5 py-3 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-10 lg:pe-10"
+					>
+						<div class="min-w-0 space-y-3">
+							<!-- The number runs inline with the question rather than beside
+							     it. As a flex sibling it made the text its own column, so
+							     every wrapped line hung under the first word and indented
+							     away from the answer beneath it.
+							     Editor content arrives wrapped in <p>: dropped to inline so
+							     it stays on the number's line, and stripped of the UA margin
+							     this layout never asked for. -->
+							<div class="flex items-start gap-2">
 								<div
-									class="text-base text-ink-gray-9 leading-6"
-									v-html="sanitizeRichHTML(row.question)"
-								/>
+									class="min-w-0 flex-1 text-base leading-6 text-ink-gray-9 [&_p]:m-0 [&_p]:inline"
+								>
+									<!-- A margin, not whitespace: Vue's `condense` strips a
+									     whitespace-only node between two elements when it spans
+									     a newline, so the gap has to be a real style. -->
+									<span class="me-2 text-ink-gray-4">
+										{{ __('Q{0}:').format(index + 1) }}
+									</span>
+									<span v-html="sanitizeRichHTML(row.question)" />
+								</div>
 								<span
-									class="size-1.5 rounded-full shrink-0 mt-2"
-									:class="row.marks == row.marks_out_of
-										? 'bg-ink-green-5'
-										: row.marks > 0
-										? 'bg-ink-orange-5'
-										: 'bg-ink-red-5'"
+									class="mt-2 size-1.5 shrink-0 rounded-full"
+									:class="markStatusClass(row)"
 								/>
 							</div>
-						</div>
-						<div class="space-y-1">
-							<span class="text-xs font-medium text-ink-gray-4 uppercase tracking-wide">{{ __('Answer') }}</span>
+							<!-- Same shape as the question above: the label runs inline with
+							     the text it introduces, so a wrapped answer returns to the
+							     left edge instead of hanging under its first word. -->
 							<div
-								class="text-base text-ink-gray-6 leading-6"
-								v-html="sanitizeRichHTML(row.answer)"
-							/>
+								class="text-base leading-6 text-ink-gray-6 [&_p]:m-0 [&_p]:inline"
+							>
+								<span
+									class="me-2 text-xs font-medium uppercase tracking-wide text-ink-gray-4"
+								>
+									{{ __('Answer:') }}
+								</span>
+								<span v-html="sanitizeRichHTML(row.answer)" />
+							</div>
 						</div>
-					</div>
-					<div class="flex items-center gap-1.5 shrink-0">
-						<FormControl
-							v-if="isOpenEnded"
-							v-model="row.marks"
-							type="number"
-							class="w-20"
-						/>
-						<span
-							v-else
-							class="w-20 text-right text-sm font-medium text-ink-gray-7"
-						>{{ row.marks }}</span>
-						<span class="text-sm text-ink-gray-5">/ {{ row.marks_out_of }}</span>
+						<!-- Only an open-ended answer is a judgement call; a choice was
+						     already marked when it was submitted. -->
+						<!-- Stacked, the marks are another labelled line under the answer
+						     rather than a figure adrift at the far edge of the screen. -->
+						<div class="flex shrink-0 items-center gap-1.5">
+							<span
+								class="text-xs font-medium uppercase tracking-wide text-ink-gray-4 lg:hidden"
+							>
+								{{ __('Marks:') }}
+							</span>
+							<FormControl
+								v-if="isOpenEnded"
+								v-model="row.marks"
+								type="number"
+								class="w-20"
+							/>
+							<span
+								v-else
+								class="text-sm font-medium text-ink-gray-7 lg:w-20 lg:text-end"
+							>
+								{{ row.marks }}
+							</span>
+							<span class="text-sm text-ink-gray-5">
+								/ {{ row.marks_out_of }}
+							</span>
+						</div>
 					</div>
 				</div>
 			</div>
 
-			<!-- Right: Sidebar -->
-			<div class="border-l overflow-y-auto">
+			<!-- Padding lives on each block rather than on the column, so a rule
+			     between two of them runs the full width of the sidebar instead of
+			     stopping short of the divider it meets.
 
-				<!-- Member info -->
-				<div class="p-5 space-y-3 border-b">
-					<div class="flex items-center gap-3">
-						<Avatar
-							:image="memberImage"
-							:label="submissionDetails.doc.member_name"
-							size="2xl"
-						/>
-						<div>
-							<div class="text-base text-ink-gray-8">
-								{{ submissionDetails.doc.member_name }}
-							</div>
-							<div class="text-xs text-ink-gray-5 mt-0.5">
-								{{ formatDate(submissionDetails.doc.creation) }}
-							</div>
+			     The `order-*` classes are what a phone follows: stacked, the whole
+			     sidebar reads as context for the answers rather than a footnote to
+			     them, so summary then log then questions. The explicit placement
+			     outranks order once there are two columns. -->
+			<aside
+				class="order-1 border-b lg:order-none lg:col-start-2 lg:row-start-1 lg:border-b-0"
+			>
+				<div class="flex items-center gap-3 px-5 py-5">
+					<Avatar
+						:image="memberImage"
+						:label="submissionDetails.doc.member_name"
+						size="2xl"
+					/>
+					<div class="min-w-0">
+						<div class="truncate text-base text-ink-gray-8">
+							{{ submissionDetails.doc.member_name }}
+						</div>
+						<div class="mt-0.5 text-xs text-ink-gray-5">
+							{{ formatDate(submissionDetails.doc.creation) }}
 						</div>
 					</div>
 				</div>
 
-				<!-- Score -->
-				<div class="p-5 space-y-3 border-b">
+				<div class="border-t px-5 py-5">
 					<div class="flex gap-6">
 						<div>
-							<div class="text-xs text-ink-gray-5 mb-0.5">{{ __('Score') }}</div>
+							<div class="mb-0.5 text-xs text-ink-gray-5">{{ __('Score') }}</div>
 							<div class="text-sm font-medium text-ink-gray-8">
-								{{ submissionDetails.doc.score }} / {{ submissionDetails.doc.score_out_of }}
+								{{ submissionDetails.doc.score }} /
+								{{ submissionDetails.doc.score_out_of }}
 							</div>
 						</div>
 						<div>
-							<div class="text-xs text-ink-gray-5 mb-0.5">{{ __('Percentage') }}</div>
+							<div class="mb-0.5 text-xs text-ink-gray-5">
+								{{ __('Percentage') }}
+							</div>
 							<div class="text-sm font-medium text-ink-gray-8">
 								{{ submissionDetails.doc.percentage }}%
 							</div>
 						</div>
-					</div>
-					<div v-if="submissionDetails.doc.violation_count" class="flex flex-wrap gap-1.5">
-						<span class="text-xs font-medium px-2 py-0.5 rounded-full bg-surface-red-2 text-ink-red-6">
-							{{ submissionDetails.doc.violation_count }}
-							{{ submissionDetails.doc.violation_count == 1 ? __('violation') : __('violations') }}
-						</span>
-					</div>
-				</div>
-
-				<!-- Proctoring activity -->
-				<div v-if="violationLog.data?.length" class="p-5">
-					<h2 class="text-sm font-semibold text-ink-gray-7 mb-3">
-						{{ __('Proctoring Log') }}
-						<span class="text-ink-gray-4 font-normal ml-1">({{ violationLog.data.length }})</span>
-					</h2>
-					<div class="space-y-3">
-						<div
-							v-for="(entry, i) in violationLog.data"
-							:key="i"
-							class="border-l-2 pl-3 py-0.5"
-							:class="entry.severity === 'violation' ? 'border-ink-red-5' : 'border-ink-orange-4'"
-						>
-							<div class="text-xs font-medium text-ink-gray-7">
-								{{ violationEventLabels[entry.event_type] || entry.event_type }}
+						<div v-if="submissionDetails.doc.violation_count">
+							<div class="mb-0.5 text-xs text-ink-gray-5">
+								{{ __('Violations') }}
 							</div>
-							<div class="flex items-center gap-1 mt-0.5">
-								<span
-									class="text-xs font-medium"
-									:class="entry.severity === 'violation' ? 'text-ink-red-5' : 'text-ink-orange-5'"
-								>{{ entry.severity }}</span>
-								<span class="text-xs text-ink-gray-4">· {{ formatTime(entry.timestamp) }}</span>
+							<div class="text-sm font-medium text-ink-red-6">
+								{{ submissionDetails.doc.violation_count }}
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
+
+			</aside>
+
+			<!-- Sits under the score on a phone, where it collapses: an attempt with
+			     a long run of events would otherwise push the first question off the
+			     screen. On a desk it is simply open, under the summary.
+
+			     The rule above it is the summary's `border-b` while stacked and its
+			     own `lg:border-t` beside it, so the two never double up — and a
+			     submission with no violations still gets one from the summary. -->
+			<aside
+				v-if="submissionDetails.doc.violation_count"
+				class="order-2 border-b px-5 py-5 lg:order-none lg:col-start-2 lg:row-start-2 lg:border-b-0 lg:border-t"
+			>
+				<details
+					:open="logOpen"
+					class="group"
+					@toggle="logOpen = $event.target.open"
+				>
+					<summary
+						class="flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden lg:cursor-default lg:pointer-events-none"
+					>
+						<h2 class="text-sm font-semibold text-ink-gray-7">
+							{{ __('Proctoring Log') }}
+						</h2>
+						<span
+							v-if="violationLog.data?.length"
+							class="text-sm text-ink-gray-4"
+						>
+							({{ violationLog.data.length }})
+						</span>
+						<span
+							class="lucide-chevron-down ms-auto size-4 shrink-0 text-ink-gray-5 transition-transform group-open:rotate-180 lg:hidden"
+						/>
+					</summary>
+
+					<div class="mt-4">
+						<!-- The rule runs behind the markers rather than between them,
+						     so the events read as one run of time. -->
+						<ol
+							v-if="violationLog.data?.length"
+							class="border-s border-outline-gray-2 ps-4"
+						>
+							<li
+								v-for="entry in violationLog.data"
+								:key="`${entry.event_type}-${entry.timestamp}`"
+								class="relative pb-4 last:pb-0"
+							>
+								<span
+									class="absolute -start-[21px] top-1 size-2 rounded-full"
+									:class="
+										entry.severity === 'violation'
+											? 'bg-ink-red-6'
+											: 'bg-ink-orange-6'
+									"
+								/>
+								<div class="text-xs font-medium leading-5 text-ink-gray-7">
+									{{
+										violationEventLabels[entry.event_type] || entry.event_type
+									}}
+								</div>
+								<div class="mt-0.5 flex items-center gap-1 text-xs leading-5">
+									<span
+										class="font-medium"
+										:class="
+											entry.severity === 'violation'
+												? 'text-ink-red-6'
+												: 'text-ink-orange-6'
+										"
+									>
+										{{ severityLabel(entry.severity) }}
+									</span>
+									<span class="text-ink-gray-4">
+										· {{ formatTime(entry.timestamp) }}
+									</span>
+								</div>
+							</li>
+						</ol>
+
+						<!-- The count is stored on the submission but the events are
+						     sent separately, so a submission can be flagged with
+						     nothing to show: say so rather than leave it blank. -->
+						<p v-else class="text-xs leading-5 text-ink-gray-5">
+							{{ __('No event details were recorded for this attempt.') }}
+						</p>
+					</div>
+				</details>
+			</aside>
 		</div>
-	</div>
+	</PageBody>
 </template>
 
 <script setup>
@@ -166,16 +306,18 @@ import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 import {
 	createDocumentResource,
 	createResource,
-	Breadcrumbs,
 	FormControl,
-	Button,
 	Badge,
 	Avatar,
+	Popover,
 	usePageMeta,
 	toast,
 } from 'frappe-ui'
-import { computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useDebounceFn, useMediaQuery } from '@vueuse/core'
+import PageHeader from '@/components/Layouts/PageHeader.vue'
+import PageBody from '@/components/Layouts/PageBody.vue'
+import HeaderButton from '@/components/HeaderButton.vue'
 import ShortcutTooltip from '@/components/ShortcutTooltip.vue'
 import {
 	useKeyboardShortcuts,
@@ -234,6 +376,10 @@ const openEndedCheck = createResource({
 
 const isOpenEnded = computed(() => !!openEndedCheck.data)
 
+// Said in two places — the header spells it out, the popover carries it on a
+// phone — so it is written once.
+const ownSubmissionNotice = __('You cannot grade your own submission.')
+
 const violationEventLabels = {
 	tab_switch: __('Tab switched'),
 	no_face: __('No face detected'),
@@ -242,6 +388,8 @@ const violationEventLabels = {
 	camera_disconnect: __('Camera disconnected'),
 }
 
+// The submission carries the member's id but not their picture, and the doc
+// lands after this page mounts, so the avatar is fetched once it does.
 const memberImageResource = createResource({
 	url: 'frappe.client.get_value',
 	makeParams() {
@@ -264,47 +412,78 @@ watch(
 
 const memberImage = computed(() => memberImageResource.data?.user_image || '')
 
-const submissionReasonLabel = computed(() => {
-	const reasons = {
-		timer_expired: __('Timer expired'),
-		max_violations: __('Max violations'),
-		browser_closed: __('Browser closed'),
-	}
-	return reasons[submissionDetails.doc?.submission_reason] ?? ''
+const formatDate = (value) => {
+	if (!value) return ''
+	return new Date(value).toLocaleDateString(undefined, {
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+	})
+}
+
+const formatTime = (value) => {
+	if (!value) return ''
+	return new Date(value).toLocaleTimeString(undefined, {
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit',
+	})
+}
+
+// Matches the `lg` breakpoint the sidebar itself switches on. useScreenSize()
+// reports mobile below 640px, which would leave the log expanded through the
+// whole band where it is already stacked full-width under the answers.
+//
+// Seeded into a ref rather than bound to `open` directly: bound, every render
+// would re-assert the query and spring the panel back open under a reader who
+// had just collapsed it. The @toggle handler writes their choice back.
+const isDesktop = useMediaQuery('(min-width: 1024px)')
+const logOpen = ref(isDesktop.value)
+
+watch(isDesktop, (desktop) => {
+	logOpen.value = desktop
 })
 
-const formatDate = (dateStr) => {
-	if (!dateStr) return ''
-	return new Date(dateStr).toLocaleDateString(undefined, {
-		year: 'numeric', month: 'short', day: 'numeric',
-	})
+// The log stores only these two severities, so anything else reads as the
+// milder of them rather than surfacing a raw value.
+const severityLabel = (severity) =>
+	severity === 'violation' ? __('Violation') : __('Warning')
+
+const markStatusClass = (row) => {
+	if (row.marks == row.marks_out_of) return 'bg-ink-green-6'
+	return row.marks > 0 ? 'bg-ink-orange-6' : 'bg-ink-red-6'
 }
 
-const formatTime = (datetimeStr) => {
-	if (!datetimeStr) return ''
-	return new Date(datetimeStr).toLocaleTimeString(undefined, {
-		hour: '2-digit', minute: '2-digit', second: '2-digit',
-	})
-}
-
+// The header renders before the doc lands. It used to be guarded by a `v-if`
+// on Breadcrumbs itself, and reading `.quiz` off an undefined doc threw during
+// render once the shared header took that guard away.
+//
+// The trail continues the submission list's own — Quizzes, the quiz, then its
+// submissions — so arriving here from that list adds a crumb rather than
+// replacing the path that led to it.
 const breadcrumbs = computed(() => {
-	if (!submissionDetails.doc) return []
-	return [
-		{
-			label: __('Quiz Submissions'),
-			route: {
-				name: 'QuizSubmissionList',
-				params: { quizID: submissionDetails.doc.quiz },
-			},
-		},
-		{
-			label: submissionDetails.doc.member_name || submissionDetails.doc.name,
-		},
-	]
+	const crumbs = [{ label: __('Quizzes'), route: { name: 'Quizzes' } }]
+	const doc = submissionDetails.doc
+	if (!doc) return crumbs
+
+	if (doc.quiz_title) {
+		crumbs.push({
+			label: doc.quiz_title,
+			route: { name: 'QuizForm', params: { quizID: doc.quiz } },
+		})
+	}
+	crumbs.push({
+		label: __('Submissions'),
+		route: { name: 'QuizSubmissionList', params: { quizID: doc.quiz } },
+	})
+	crumbs.push({ label: doc.member_name || doc.name })
+	return crumbs
 })
 
 const isOwnSubmission = computed(
-	() => user.data?.is_instructor && submissionDetails.doc?.member === user.data?.name
+	() =>
+		user.data?.is_instructor &&
+		submissionDetails.doc?.member === user.data?.name
 )
 
 const saveSubmission = (opts = {}) => {
@@ -322,13 +501,17 @@ const saveSubmission = (opts = {}) => {
 	)
 }
 
+// Marks are typed one field at a time, so the grade is committed as it is
+// entered rather than left to a Save the grader may never press.
 const autoSave = useDebounceFn(() => {
 	if (submissionDetails.isDirty) saveSubmission({ silent: true })
 }, 1000)
 
 watch(
 	() => submissionDetails.isDirty,
-	(dirty) => { if (dirty) autoSave() }
+	(dirty) => {
+		if (dirty) autoSave()
+	}
 )
 
 onBeforeUnmount(() => {

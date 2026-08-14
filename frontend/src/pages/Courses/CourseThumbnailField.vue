@@ -1,8 +1,6 @@
 <template>
 	<div class="flex flex-col gap-y-1.5">
-		<label class="block text-p-sm-medium text-ink-gray-7">
-			{{ __('Course thumbnail') }}
-		</label>
+		<InputLabel :id="thumbnailLabelId" :label="__('Course thumbnail')" />
 
 		<div class="flex items-start gap-5">
 			<button
@@ -49,11 +47,16 @@
 						<FileUploader
 							ref="uploaderRef"
 							:fileTypes="['.jpg,.jpeg,.gif,.png']"
+							:uploadArgs="{ private: false }"
 							@success="(file) => onUploaded(file.file_url)"
 							@failure="onUploadFailure"
 						>
 							<template #default="{ openFileSelector, uploading }">
-								<Button :loading="uploading" @click="openFileSelector">
+								<Button
+									class="text-p-base-medium"
+									:loading="uploading"
+									@click="openFileSelector"
+								>
 									<template #prefix>
 										<span class="lucide-upload size-4" />
 									</template>
@@ -99,6 +102,7 @@
 						<FileUploader
 							ref="uploaderRef"
 							:fileTypes="['.jpg,.jpeg,.gif,.png']"
+							:uploadArgs="{ private: false }"
 							@success="(file) => onUploaded(file.file_url)"
 							@failure="onUploadFailure"
 						>
@@ -123,9 +127,11 @@
 
 <script setup lang="ts">
 import { Button, FileUploader, createResource, toast } from 'frappe-ui'
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, ref, useId, watch } from 'vue'
 import type { CourseFormContext, Resource } from '@/types'
+import { InputLabel } from '@/components/Form/labeling'
 
+const thumbnailLabelId = useId()
 const { resource, markDirty } = inject<CourseFormContext>('courseForm')!
 
 const doc = computed(() => resource.doc)

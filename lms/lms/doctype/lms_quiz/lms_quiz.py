@@ -26,7 +26,7 @@ from lms.lms.utils import (
 )
 
 # Quiz answers may embed inline images as data: URIs. Only raster image types are
-# permitted — a data: URI with an active-document extension (.xhtml, .xsl, .html,
+# permitted. A data: URI with an active-document extension (.xhtml, .xsl, .html,
 # .js, …) would otherwise be written to the public /files/ dir and served inline,
 # enabling stored XSS on the LMS origin. SVG is excluded (script-bearing).
 ALLOWED_DATAURL_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".bmp"}
@@ -124,7 +124,7 @@ def _parse_json_arg(raw, label):
 def _validate_quiz_results(results):
 	"""Coarse shape check before process_results reads result["question_name"] / ["answer"].
 	Rejects genuinely malformed items (non-dict, no question_name, or an answer that isn't a
-	list) with a clean validation error. A blank/null answer element is NOT rejected here — the
+	list) with a clean validation error. A blank/null answer element is NOT rejected here: the
 	UI legitimately emits answer=[null] for a skipped open-ended question; process_results
 	normalises those to "" so a student can still submit a partially-answered quiz."""
 	for result in results:
@@ -143,6 +143,9 @@ def submit_quiz(
 	submission_reason: str = "manual",
 	violation_events: str | None = None,
 ):
+	if not isinstance(quiz, str):
+		frappe.throw(_("Invalid quiz."), frappe.ValidationError)
+
 	results = _parse_json_arg(results, _("quiz results")) if results else []
 	if not isinstance(results, list):
 		frappe.throw(_("Invalid quiz results submitted."), frappe.ValidationError)
@@ -165,10 +168,15 @@ def submit_quiz(
 	if not quiz_details:
 		frappe.throw(_("Invalid quiz."), frappe.ValidationError)
 
+	from lms.lms.permissions import can_access_quiz
+
+	if not can_access_quiz(quiz):
+		frappe.throw(_("You are not authorized to submit this quiz."), frappe.PermissionError)
+
 	data = process_results(results, quiz_details)
 	is_open_ended = data["is_open_ended"]
 
-	# Score and percentage are the submission's responsibility — its validate()
+	# Score and percentage are the submission's responsibility. Its validate()
 	# runs validate_marks() + set_percentage() on save. Read them back rather
 	# than recomputing here, so the two paths can't drift.
 	submission = create_submission(
@@ -447,7 +455,7 @@ def check_answer(quiz: str, question: str, question_type: str, answers: str):
 		return check_choice_answers(question, answers)
 
 	# A blank input answer (empty list, or the [null] the UI emits for an untouched field)
-	# scores as incorrect — coerce to "" so answers[0] can't IndexError / feed None onward.
+	# scores as incorrect; coerce to "" so answers[0] can't IndexError / feed None onward.
 	answer = answers[0] if answers else ""
 	return check_input_answers(question, answer if isinstance(answer, str) else "")
 

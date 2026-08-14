@@ -59,6 +59,14 @@
 								</span>
 							</div>
 						</Tooltip>
+						<Tooltip v-if="event.timezone" :text="__('Timezone')">
+							<div class="flex items-center gap-x-2 w-fit">
+								<span class="lucide-globe h-4 w-4" />
+								<span>
+									{{ formatTimezone(event.timezone, event.date) }}
+								</span>
+							</div>
+						</Tooltip>
 					</div>
 					<div class="flex items-center gap-x-2 mt-auto">
 						<Button
@@ -106,7 +114,8 @@
 									:disabled="!userIsEvaluator()"
 								/>
 							</div>
-							<Textarea
+							<FormControl
+								type="textarea"
 								v-model="evaluation.summary"
 								:label="__('Summary')"
 								:rows="7"
@@ -167,19 +176,19 @@
 </template>
 <script setup>
 import {
-	Dialog,
 	Button,
+	Dialog,
 	FormControl,
-	createResource,
+	Rating,
 	Tabs,
 	Tooltip,
-	Textarea,
+	createResource,
 	toast,
-	Rating,
 } from 'frappe-ui'
 import BooleanSwitch from '@/components/Controls/BooleanSwitch.vue'
 import { inject, reactive, watch, ref, computed } from 'vue'
 import { formatTime } from '@/utils'
+import { formatTimezone } from '@/utils/timezone'
 import Link from '@/components/Controls/Link.vue'
 
 const show = defineModel()

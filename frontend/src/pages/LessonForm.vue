@@ -1,7 +1,23 @@
 <template>
-	<div class="py-10">
-		<div class="mx-10 space-y-6 px-20">
-			<div class="flex items-center justify-between gap-3">
+	<div class="py-6 sm:py-10">
+		<!-- `mx-10 px-20` left a 390px phone a 150px content well, so the lesson
+		     title wrapped to four lines. It never overflowed, which is why sweeps
+		     passed it. -->
+		<div class="mx-0 space-y-6 px-4 sm:mx-10 sm:px-20">
+			<!-- A full-width settings row costs a phone more than it earns, so the
+			     lesson's settings collapse behind a chip and open in a sheet. The
+			     desk keeps them inline where there is room. -->
+			<button
+				v-if="isMobile"
+				type="button"
+				class="inline-flex h-9 items-center gap-1.5 rounded-full border border-outline-gray-2 px-3.5 text-p-sm-medium text-ink-gray-7 hover:bg-surface-gray-2"
+				@click="showLessonDetails = true"
+			>
+				<span class="lucide-pencil size-3.5" />
+				{{ __('Lesson details') }}
+			</button>
+
+			<div v-else class="flex items-center justify-between gap-3">
 				<div class="flex items-center gap-3">
 					<Switch v-model="lesson.include_in_preview" @change="markDirty" />
 					<div class="flex items-center gap-1.5">
@@ -23,14 +39,42 @@
 				</div>
 			</div>
 
+			<BottomSheet v-model="showLessonDetails" :title="__('Lesson details')">
+				<div class="px-3 pb-2">
+					<div class="flex items-start justify-between gap-4 py-3">
+						<div class="min-w-0">
+							<div class="text-p-base font-medium text-ink-gray-8">
+								{{ __('Include in preview') }}
+							</div>
+							<p class="mt-0.5 text-p-sm text-ink-gray-5">
+								{{
+									__(
+										'When on, anyone can preview this lesson without enrolling. Otherwise it is visible only to enrolled students.'
+									)
+								}}
+							</p>
+						</div>
+						<Switch
+							v-model="lesson.include_in_preview"
+							class="shrink-0"
+							@change="markDirty"
+						/>
+					</div>
+				</div>
+			</BottomSheet>
+
+			<!-- `block`: a textarea is inline-block by default, so it sits on the
+			     parent's line box and carries its descender: 5px of space under
+			     the title that belongs to no rule and no gap. -->
 			<textarea
 				ref="titleRef"
 				v-model="lesson.title"
 				:placeholder="__('Lesson title')"
 				:aria-label="__('Lesson title')"
 				rows="1"
-				class="lesson-title w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-2xl font-bold leading-tight text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-0"
+				class="lesson-title block w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-2xl font-bold leading-tight text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-0"
 				@input="onTitleInput"
+				@keydown.enter="onTitleEnter"
 			/>
 
 			<details
@@ -51,7 +95,7 @@
 						:label="__('private')"
 					/>
 					<ChevronRight
-						class="instructor-notes-chevron ms-auto size-4 stroke-2 text-ink-gray-5"
+						class="instructor-notes-chevron ms-auto size-4 text-ink-gray-5"
 					/>
 				</summary>
 				<BlockEditor
@@ -92,22 +136,41 @@ import {
 import { ChevronRight, NotebookPen } from 'lucide-vue-next'
 import { useDebounceFn } from '@vueuse/core'
 import { enablePlyr, sanitizeEditorJs } from '@/utils'
-import { hasEditorContent, shouldSkipLessonSave } from '@/utils/lessonForm'
+import {
+	hasEditorContent,
+	shouldSkipLessonSave,
+	toSingleLineTitle,
+} from '@/utils/lessonForm'
 import { convertBodyToBlocks as convertToJSON } from '@/utils/lessonMacros'
 import { hasVideoContent } from '@/utils/video'
 import BlockEditor from '@/components/BlockEditor.vue'
+import BottomSheet from '@/components/BottomSheet.vue'
+import { useScreenSize } from '@/utils/composables'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
 import {
 	useKeyboardShortcuts,
 	saveShortcut,
 } from '@/composables/useKeyboardShortcuts'
 
+const { isMobile } = useScreenSize()
+const showLessonDetails = ref(false)
+
 const editor = ref(null)
 const instructorEditor = ref(null)
 const user = inject('$user')
 const titleRef = ref(null)
 
+// A lesson title is one line. The field stays a textarea so a long title wraps
+// and grows; only the explicit break is refused.
+function onTitleEnter(event) {
+	// Enter also confirms an IME candidate. Never swallow that one.
+	if (event.isComposing) return
+	event.preventDefault()
+}
+
 function onTitleInput() {
+	// Enter is refused on keydown, but a paste or a drop can still carry breaks.
+	lesson.title = toSingleLineTitle(lesson.title)
 	autoGrowTitle()
 	markDirty({ fromTitle: true })
 }
@@ -227,6 +290,8 @@ const lessonDetails = createResource({
 			Object.keys(data.lesson).forEach((key) => {
 				lesson[key] = data.lesson[key]
 			})
+			// Titles saved before Enter was refused still hold breaks.
+			lesson.title = toSingleLineTitle(lesson.title)
 			lesson.include_in_preview = data?.lesson?.include_in_preview
 				? true
 				: false
@@ -239,8 +304,8 @@ const lessonDetails = createResource({
 						// Loaded content isn't user input; arm autosave after render.
 						isDirty.value = false
 						initialLoadComplete = true
-						// A freshly created lesson opens empty as "Untitled lesson" —
-						// focus the title so it can be named (and so the block editor
+						// A freshly created lesson opens empty as "Untitled lesson".
+						// Focus the title so it can be named (and so the block editor
 						// doesn't grab the caret out from under the title). Existing
 						// lessons focus the body for content editing.
 						if (!data.lesson.content && !data.lesson.body) {
@@ -392,7 +457,7 @@ function saveLesson({ flush = false } = {}) {
 	Promise.all([bodyPromise, notesPromise]).then(([bodyData, notesData]) => {
 		const bodyHasContent = foldEditorData(bodyData, notesData)
 
-		// Skip when there's nothing to save — no title, no body.
+		// Skip when there's nothing to save: no title, no body.
 		if (shouldSkipLessonSave(lesson.title, bodyHasContent)) return
 
 		// During teardown only an explicit flush may persist.

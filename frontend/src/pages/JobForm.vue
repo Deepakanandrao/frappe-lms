@@ -1,27 +1,27 @@
 <template>
 	<div class="">
-		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-base px-3 py-2.5 sm:px-5"
-		>
-			<Breadcrumbs :items="breadcrumbs" />
-			<div class="flex items-center gap-x-2">
+		<PageHeader :breadcrumbs="breadcrumbs">
+			<template #actions>
 				<Badge v-if="isDirty" theme="orange">
 					{{ __('Not Saved') }}
 				</Badge>
-				<ShortcutTooltip :label="__('Save')" combo="Mod+S">
-					<Button variant="solid" @click="saveJob()">
-						{{ __('Save') }}
-					</Button>
+				<ShortcutTooltip :label="__('Save')" combo="Mod+S" :disabled="isMobile">
+					<HeaderButton
+						:label="__('Save')"
+						icon="lucide-save"
+						variant="solid"
+						@click="saveJob()"
+					/>
 				</ShortcutTooltip>
-			</div>
-		</header>
+			</template>
+		</PageHeader>
 		<div class="">
-			<div class="grid grid-cols-[70%,30%] gap-5 px-5">
+			<div class="grid grid-cols-1 gap-5 px-5 lg:grid-cols-[70%,30%]">
 				<div class="space-y-5 pt-5">
 					<h2 class="text-ink-gray-9 font-semibold">
 						{{ __('Job Details') }}
 					</h2>
-					<div class="grid grid-cols-3 gap-5">
+					<div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
 						<FormControl
 							v-model="job.job_title"
 							:label="__('Title')"
@@ -42,11 +42,12 @@
 							:required="true"
 						/>
 					</div>
-					<div>
-						<label class="block text-p-sm-medium text-ink-gray-7 mb-1.5">
-							{{ __('Description') }}
-							<span class="text-ink-red-6">*</span>
-						</label>
+					<div class="space-y-1.5">
+						<InputLabel
+							:id="descriptionLabelId"
+							:label="__('Description')"
+							:required="true"
+						/>
 						<RichTextEditor
 							:content="job.description"
 							@change="(val) => (job.description = val)"
@@ -56,7 +57,7 @@
 						/>
 					</div>
 				</div>
-				<div class="border-s h-[93vh]">
+				<div class="border-t lg:border-s lg:border-t-0 lg:h-[93vh]">
 					<div v-if="jobName != 'new'" class="p-5 space-y-5 border-b">
 						<FormControl
 							v-model="job.status"
@@ -117,29 +118,33 @@
 <script setup>
 import {
 	Badge,
-	Breadcrumbs,
 	call,
 	FormControl,
 	createDocumentResource,
-	Button,
 	usePageMeta,
 	toast,
 } from 'frappe-ui'
-import { computed, inject, onMounted, reactive, ref, watch } from 'vue'
+import { computed, inject, onMounted, reactive, ref, useId, watch } from 'vue'
 import { sessionStore } from '@/stores/session'
 import { useRouter } from 'vue-router'
 import { sanitizeHTML } from '@/utils'
+import { useScreenSize } from '@/utils/composables'
 import Uploader from '@/components/Controls/Uploader.vue'
+import PageHeader from '@/components/Layouts/PageHeader.vue'
+import HeaderButton from '@/components/HeaderButton.vue'
 import ShortcutTooltip from '@/components/ShortcutTooltip.vue'
 import {
 	useKeyboardShortcuts,
 	saveShortcut,
 } from '@/composables/useKeyboardShortcuts'
 import RichTextEditor from '@/components/RichTextEditor.vue'
+import { InputLabel } from '@/components/Form/labeling'
 
 const user = inject('$user')
 const router = useRouter()
 const { brand } = sessionStore()
+const { isMobile } = useScreenSize()
+const descriptionLabelId = useId()
 const isDirty = ref(false)
 const originalJobData = ref(null)
 

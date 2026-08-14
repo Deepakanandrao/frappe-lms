@@ -1,10 +1,5 @@
 <template>
-	<header
-		v-if="!fromLesson"
-		class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-base px-3 py-2.5 sm:px-5"
-	>
-		<Breadcrumbs :items="breadcrumbs" />
-	</header>
+	<PageHeader v-if="!fromLesson" :breadcrumbs="breadcrumbs" />
 	<div
 		v-if="falconError"
 		class="flex items-center justify-between p-3 text-sm bg-surface-amber-1 text-ink-amber-3"
@@ -150,7 +145,6 @@
 import { sanitizeRichHTML } from '@/utils/sanitizeRichHTML'
 import {
 	Badge,
-	Breadcrumbs,
 	Button,
 	call,
 	createDocumentResource,
@@ -158,13 +152,29 @@ import {
 	usePageMeta,
 } from 'frappe-ui'
 import { computed, inject, onMounted, ref, watch } from 'vue'
+import PageHeader from '@/components/Layouts/PageHeader.vue'
 import { sessionStore } from '@/stores/session'
 import { useRouter } from 'vue-router'
 import { openSettings } from '@/utils'
 import { useSettings } from '@/stores/settings'
 import { getLmsRoute } from '@/utils/basePath'
+import { provideStudentView } from '@/composables/useStudentView'
 
-const user = inject<any>('$user')
+const realUser = inject<any>('$user')
+
+// Rendered in an iframe from the lesson preview, so provide/inject can't reach
+// this app instance; Student View arrives as a query param instead, exactly as
+// it does for assignment submissions. Unlike AssignmentSubmission, this page
+// reads the instructor flags in its *own* template (the settings button, the
+// view-someone-else's-submission branch), so it uses the masked user itself
+// rather than only providing it to children.
+const studentView = ref(
+	new URLSearchParams(window.location.search).get('studentView') === '1'
+)
+const { mockedUser: user } = provideStudentView(
+	realUser,
+	() => studentView.value
+)
 const code = ref<string | null>('')
 const output = ref<string | null>(null)
 const error = ref<boolean | null>(null)

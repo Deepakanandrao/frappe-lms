@@ -33,16 +33,23 @@
 						<FileUploader
 							v-if="!data[field.name]"
 							:fileTypes="['image/*']"
+							:uploadArgs="{ private: !field.public }"
 							:validateFile="validateFile"
 							@success="(file) => (data[field.name] = file.file_url)"
 						>
 							<template
 								v-slot="{ file, progress, uploading, openFileSelector }"
 							>
-								<div class="">
-									<Button @click="openFileSelector" :loading="uploading">
+								<div>
+									<Button
+										class="text-p-base-medium"
+										:loading="uploading"
+										@click="openFileSelector"
+									>
 										{{
-											uploading ? `Uploading ${progress}%` : 'Upload an image'
+											uploading
+												? __('Uploading {0}%').format(progress)
+												: __('Upload an image')
 										}}
 									</Button>
 								</div>
@@ -89,15 +96,11 @@
 						</CodeEditor>
 					</div>
 
-					<!-- Textarea: full-width block (label/description above, like CRM) -->
+					<!-- Textarea: full-width block. Label leads, control follows, and
+					     the description reads as help text under the control. -->
 					<div v-else-if="field.type == 'textarea'" class="py-3">
-						<div class="space-y-1 mb-2">
-							<div class="text-p-base-medium text-ink-gray-7">
-								{{ __(field.label) }}
-							</div>
-							<div v-if="field.description" class="text-p-sm text-ink-gray-5">
-								{{ __(field.description) }}
-							</div>
+						<div class="text-p-base-medium text-ink-gray-7 mb-2">
+							{{ __(field.label) }}
 						</div>
 						<FormControl
 							type="textarea"
@@ -107,6 +110,12 @@
 							:aria-label="__(field.label)"
 							:placeholder="field.placeholder || __(field.label)"
 						/>
+						<div
+							v-if="field.description"
+							class="text-p-sm text-ink-gray-5 mt-2"
+						>
+							{{ __(field.description) }}
+						</div>
 					</div>
 
 					<div v-else class="flex items-center justify-between gap-4 py-3">
@@ -166,6 +175,16 @@ import { watch } from 'vue'
 import { validateFile } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import CodeEditor from '@/components/Controls/CodeEditor.vue'
+
+// The FileUploader above binds :uploadArgs="{ private: !field.public }", and it
+// is written inline deliberately. Privacy is the FIELD's decision, never this
+// component's: the backend maps every Attach / Attach Image field of a
+// third-party <Gateway> Settings doctype to type 'Upload' (api.py
+// get_transformed_fields), and those reach here via PaymentGatewayDetails —
+// merchant QR codes and KYC documents among them. Only a field that opts in with
+// `public: true` may be world-readable; everything else keeps frappe's private
+// default. Behind a helper the privacy ratchet in publicImageUploads.test.ts can
+// only see "computed" and would stop catching a flip to public.
 
 const props = defineProps({
 	sections: {
