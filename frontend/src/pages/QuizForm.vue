@@ -230,9 +230,7 @@
 					v-model="quizDetails.doc.max_violations"
 					:label="__('Max Violations')"
 					:description="
-						__(
-							'Quiz auto-submits when this many violations are recorded.'
-						)
+						__('Quiz auto-submits when this many violations are recorded.')
 					"
 					variant="outline"
 					:required="true"

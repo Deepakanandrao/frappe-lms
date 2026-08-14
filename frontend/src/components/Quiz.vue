@@ -8,7 +8,11 @@
 	<div v-else-if="quiz.data">
 		<!-- Status bar: timer + violation pill -->
 		<div
-			v-if="activeQuestion > 0 && !quizSubmission.data && (quiz.data.duration || quiz.data.enable_proctoring)"
+			v-if="
+				activeQuestion > 0 &&
+				!quizSubmission.data &&
+				(quiz.data.duration || quiz.data.enable_proctoring)
+			"
 			class="flex items-center justify-between mb-4"
 		>
 			<!-- Timer pill -->
@@ -47,23 +51,41 @@
 						{{ quiz.data.title }}
 					</h2>
 					<div class="flex flex-wrap gap-1.5 justify-center">
-						<span class="inline-flex items-center gap-1.5 bg-surface-gray-3 text-ink-gray-7 text-xs font-medium px-2.5 py-1 rounded-full">
+						<span
+							class="inline-flex items-center gap-1.5 bg-surface-gray-3 text-ink-gray-7 text-xs font-medium px-2.5 py-1 rounded-full"
+						>
 							<span class="lucide-list size-3.5" />
-							{{ questions.length }} {{ questions.length == 1 ? __('question') : __('questions') }}
+							{{ questions.length }}
+							{{ questions.length == 1 ? __('question') : __('questions') }}
 						</span>
-						<span v-if="quiz.data.passing_percentage" class="inline-flex items-center gap-1.5 bg-surface-gray-3 text-ink-gray-7 text-xs font-medium px-2.5 py-1 rounded-full">
+						<span
+							v-if="quiz.data.passing_percentage"
+							class="inline-flex items-center gap-1.5 bg-surface-gray-3 text-ink-gray-7 text-xs font-medium px-2.5 py-1 rounded-full"
+						>
 							<span class="lucide-target size-3.5" />
-							{{ __('Passing score: {0}%').format(quiz.data.passing_percentage) }}
+							{{
+								__('Passing score: {0}%').format(quiz.data.passing_percentage)
+							}}
 						</span>
-						<span v-if="quiz.data.max_attempts" class="inline-flex items-center gap-1.5 bg-surface-gray-3 text-ink-gray-7 text-xs font-medium px-2.5 py-1 rounded-full">
+						<span
+							v-if="quiz.data.max_attempts"
+							class="inline-flex items-center gap-1.5 bg-surface-gray-3 text-ink-gray-7 text-xs font-medium px-2.5 py-1 rounded-full"
+						>
 							<span class="lucide-refresh-cw size-3.5" />
-							{{ quiz.data.max_attempts }} {{ quiz.data.max_attempts == 1 ? __('attempt') : __('attempts') }}
+							{{ quiz.data.max_attempts }}
+							{{ quiz.data.max_attempts == 1 ? __('attempt') : __('attempts') }}
 						</span>
-						<span v-if="quiz.data.duration" class="inline-flex items-center gap-1.5 bg-surface-blue-1 text-ink-blue-6 text-xs font-medium px-2.5 py-1 rounded-full">
+						<span
+							v-if="quiz.data.duration"
+							class="inline-flex items-center gap-1.5 bg-surface-blue-1 text-ink-blue-6 text-xs font-medium px-2.5 py-1 rounded-full"
+						>
 							<span class="lucide-timer size-3.5" />
 							{{ quiz.data.duration }} {{ __('min') }}
 						</span>
-						<span v-if="quiz.data.enable_proctoring" class="inline-flex items-center gap-1.5 bg-surface-orange-1 text-ink-orange-6 text-xs font-medium px-2.5 py-1 rounded-full">
+						<span
+							v-if="quiz.data.enable_proctoring"
+							class="inline-flex items-center gap-1.5 bg-surface-orange-1 text-ink-orange-6 text-xs font-medium px-2.5 py-1 rounded-full"
+						>
 							<span class="lucide-camera size-3.5" />
 							{{ __('Proctored') }}
 						</span>
@@ -71,8 +93,14 @@
 				</div>
 
 				<!-- Proctored: centered info lines -->
-				<div v-if="quiz.data.enable_proctoring && questions.length" class="px-5 mb-4 space-y-2">
-					<div v-if="inVideo" class="flex items-center justify-center gap-2 text-sm text-ink-gray-6">
+				<div
+					v-if="quiz.data.enable_proctoring && questions.length"
+					class="px-5 mb-4 space-y-2"
+				>
+					<div
+						v-if="inVideo"
+						class="flex items-center justify-center gap-2 text-sm text-ink-gray-6"
+					>
 						<span class="lucide-play-circle size-4 shrink-0 text-ink-gray-5" />
 						{{ __('Complete the quiz to continue the video.') }}
 					</div>
@@ -81,58 +109,141 @@
 					     stays on the first line instead of centring against both. -->
 					<div class="flex justify-center">
 						<p class="text-sm text-ink-gray-6">
-							<span class="lucide-alert-circle me-1 inline-block size-4 align-middle text-ink-gray-5" aria-hidden="true" />
-							{{ __('Closing or refreshing the page will submit your quiz automatically.') }}
+							<span
+								class="lucide-alert-circle me-1 inline-block size-4 align-middle text-ink-gray-5"
+								aria-hidden="true"
+							/>
+							{{
+								__(
+									'Closing or refreshing the page will submit your quiz automatically.'
+								)
+							}}
 						</p>
 					</div>
-					<div v-if="quiz.data.enable_negative_marking" class="flex justify-center">
+					<div
+						v-if="quiz.data.enable_negative_marking"
+						class="flex justify-center"
+					>
 						<p class="text-sm text-ink-gray-6">
-							<span class="lucide-minus-circle me-1 inline-block size-4 align-middle text-ink-gray-5" aria-hidden="true" />
-							{{ __('Wrong answers deduct {0} {1}.').format(quiz.data.marks_to_cut, quiz.data.marks_to_cut == 1 ? __('mark') : __('marks')) }}
+							<span
+								class="lucide-minus-circle me-1 inline-block size-4 align-middle text-ink-gray-5"
+								aria-hidden="true"
+							/>
+							{{
+								__('Wrong answers deduct {0} {1}.').format(
+									quiz.data.marks_to_cut,
+									quiz.data.marks_to_cut == 1 ? __('mark') : __('marks')
+								)
+							}}
 						</p>
 					</div>
 				</div>
 
 				<!-- Non-proctored: tips rows folded into the card -->
-				<div v-if="!quiz.data.enable_proctoring && questions.length && !attemptsExhausted" class="border-t divide-y">
+				<div
+					v-if="
+						!quiz.data.enable_proctoring &&
+						questions.length &&
+						!attemptsExhausted
+					"
+					class="border-t divide-y"
+				>
 					<div v-if="inVideo" class="flex items-center gap-3 px-4 py-3">
 						<span class="lucide-play-circle size-4 shrink-0 text-ink-gray-5" />
-						<div class="text-sm text-ink-gray-7">{{ __('Complete the quiz to continue the video.') }}</div>
+						<div class="text-sm text-ink-gray-7">
+							{{ __('Complete the quiz to continue the video.') }}
+						</div>
 					</div>
 					<div class="flex items-start gap-3 px-4 py-3">
-						<span class="lucide-bookmark size-4 shrink-0 text-ink-gray-5 mt-0.5" />
-						<div class="text-sm text-ink-gray-7">{{ __('Use "Mark for Review" to flag questions you want to revisit before submitting.') }}</div>
+						<span
+							class="lucide-bookmark size-4 shrink-0 text-ink-gray-5 mt-0.5"
+						/>
+						<div class="text-sm text-ink-gray-7">
+							{{
+								__(
+									'Use "Mark for Review" to flag questions you want to revisit before submitting.'
+								)
+							}}
+						</div>
 					</div>
 					<div class="flex items-start gap-3 px-4 py-3">
 						<span class="lucide-send size-4 shrink-0 text-ink-gray-5 mt-0.5" />
-						<div class="text-sm text-ink-gray-7">{{ __('Answer all questions before you submit. You can navigate freely between them.') }}</div>
+						<div class="text-sm text-ink-gray-7">
+							{{
+								__(
+									'Answer all questions before you submit. You can navigate freely between them.'
+								)
+							}}
+						</div>
 					</div>
 					<div class="flex items-start gap-3 px-4 py-3">
-						<span class="lucide-alert-triangle size-4 shrink-0 text-ink-gray-5 mt-0.5" />
-						<div class="text-sm text-ink-gray-7">{{ __('Closing or refreshing the page will submit your quiz automatically.') }}</div>
+						<span
+							class="lucide-alert-triangle size-4 shrink-0 text-ink-gray-5 mt-0.5"
+						/>
+						<div class="text-sm text-ink-gray-7">
+							{{
+								__(
+									'Closing or refreshing the page will submit your quiz automatically.'
+								)
+							}}
+						</div>
 					</div>
-					<div v-if="quiz.data.duration" class="flex items-start gap-3 px-4 py-3">
+					<div
+						v-if="quiz.data.duration"
+						class="flex items-start gap-3 px-4 py-3"
+					>
 						<span class="lucide-timer size-4 shrink-0 text-ink-gray-5 mt-0.5" />
-						<div class="text-sm text-ink-gray-7">{{ __('The quiz will be submitted automatically when the timer runs out.') }}</div>
+						<div class="text-sm text-ink-gray-7">
+							{{
+								__(
+									'The quiz will be submitted automatically when the timer runs out.'
+								)
+							}}
+						</div>
 					</div>
-					<div v-if="quiz.data.enable_negative_marking" class="flex items-start gap-3 px-4 py-3">
-						<span class="lucide-minus-circle size-4 shrink-0 text-ink-gray-5 mt-0.5" />
-						<div class="text-sm text-ink-gray-7">{{ __('Wrong answers deduct {0} {1}.').format(quiz.data.marks_to_cut, quiz.data.marks_to_cut == 1 ? __('mark') : __('marks')) }}</div>
+					<div
+						v-if="quiz.data.enable_negative_marking"
+						class="flex items-start gap-3 px-4 py-3"
+					>
+						<span
+							class="lucide-minus-circle size-4 shrink-0 text-ink-gray-5 mt-0.5"
+						/>
+						<div class="text-sm text-ink-gray-7">
+							{{
+								__('Wrong answers deduct {0} {1}.').format(
+									quiz.data.marks_to_cut,
+									quiz.data.marks_to_cut == 1 ? __('mark') : __('marks')
+								)
+							}}
+						</div>
 					</div>
 				</div>
 
 				<div class="px-5 py-4">
 					<template v-if="!questions.length">
-						<p class="text-sm text-ink-gray-5 mb-3">{{ __('This quiz has no questions available yet.') }}</p>
-						<Button v-if="inVideo" @click="props.backToVideo()">{{ __('Resume Video') }}</Button>
+						<p class="text-sm text-ink-gray-5 mb-3">
+							{{ __('This quiz has no questions available yet.') }}
+						</p>
+						<Button v-if="inVideo" @click="props.backToVideo()">{{
+							__('Resume Video')
+						}}</Button>
 					</template>
 					<template v-else-if="attemptsExhausted">
 						<div class="bg-surface-red-1 rounded-lg px-4 py-3 mb-3">
 							<div class="text-sm text-ink-red-6 leading-5">
-								{{ __("You've used all {0} {1} for this quiz. Reach out to your instructor if you need to try again.").format(quiz.data.max_attempts, quiz.data.max_attempts == 1 ? __('attempt') : __('attempts')) }}
+								{{
+									__(
+										"You've used all {0} {1} for this quiz. Reach out to your instructor if you need to try again."
+									).format(
+										quiz.data.max_attempts,
+										quiz.data.max_attempts == 1 ? __('attempt') : __('attempts')
+									)
+								}}
 							</div>
 						</div>
-						<Button v-if="inVideo" @click="props.backToVideo()">{{ __('Resume Video') }}</Button>
+						<Button v-if="inVideo" @click="props.backToVideo()">{{
+							__('Resume Video')
+						}}</Button>
 					</template>
 					<template v-else>
 						<div class="flex items-center justify-center gap-2">
@@ -143,10 +254,19 @@
 							>
 								{{ __('Start Quiz') }}
 							</Button>
-							<Button v-if="inVideo" @click="props.backToVideo()">{{ __('Resume Video') }}</Button>
+							<Button v-if="inVideo" @click="props.backToVideo()">{{
+								__('Resume Video')
+							}}</Button>
 						</div>
-						<p v-if="quiz.data.enable_proctoring && !cameraReady" class="text-xs text-ink-gray-5 text-center mt-2">
-							{{ __('Position your face in the camera to enable the start button.') }}
+						<p
+							v-if="quiz.data.enable_proctoring && !cameraReady"
+							class="text-xs text-ink-gray-5 text-center mt-2"
+						>
+							{{
+								__(
+									'Position your face in the camera to enable the start button.'
+								)
+							}}
 						</p>
 					</template>
 				</div>
@@ -155,11 +275,16 @@
 			<!-- Camera + Rules (proctored only). Stacked until there is room for two
 			     columns: split early, the camera preview and the rule text each get
 			     a strip too narrow to read, and every rule wraps to three lines. -->
-			<div v-if="quiz.data.enable_proctoring && !attemptsExhausted" class="grid gap-4 md:grid-cols-2">
+			<div
+				v-if="quiz.data.enable_proctoring && !attemptsExhausted"
+				class="grid gap-4 md:grid-cols-2"
+			>
 				<!-- Camera setup -->
 				<div class="border rounded-xl overflow-hidden flex flex-col">
 					<div class="px-4 py-3 border-b">
-						<div class="text-sm font-semibold text-ink-gray-8">{{ __('Camera Setup') }}</div>
+						<div class="text-sm font-semibold text-ink-gray-8">
+							{{ __('Camera Setup') }}
+						</div>
 					</div>
 					<!-- The preview is an absolutely-positioned <video>, so it has no
 					     height of its own and takes it from this box. Side by side the
@@ -184,41 +309,82 @@
 				<!-- Proctoring rules -->
 				<div class="border rounded-xl overflow-hidden flex flex-col">
 					<div class="px-4 py-3 border-b">
-						<div class="text-sm font-semibold text-ink-gray-8">{{ __('Proctoring Rules') }}</div>
+						<div class="text-sm font-semibold text-ink-gray-8">
+							{{ __('Proctoring Rules') }}
+						</div>
 					</div>
 					<div class="divide-y flex-1 flex flex-col">
 						<div class="flex items-start gap-3 px-4 py-3">
-							<span class="lucide-eye-off size-4 shrink-0 text-ink-gray-5 mt-0.5" />
+							<span
+								class="lucide-eye-off size-4 shrink-0 text-ink-gray-5 mt-0.5"
+							/>
 							<div>
-								<div class="text-sm text-ink-gray-8 leading-5">{{ __('Face must be visible') }}</div>
-								<div class="text-xs text-ink-gray-5 mt-0.5 leading-5">{{ __('Looking away for too long counts as a violation.') }}</div>
+								<div class="text-sm text-ink-gray-8 leading-5">
+									{{ __('Face must be visible') }}
+								</div>
+								<div class="text-xs text-ink-gray-5 mt-0.5 leading-5">
+									{{ __('Looking away for too long counts as a violation.') }}
+								</div>
 							</div>
 						</div>
 						<div class="flex items-start gap-3 px-4 py-3">
-							<span class="lucide-users size-4 shrink-0 text-ink-gray-5 mt-0.5" />
+							<span
+								class="lucide-users size-4 shrink-0 text-ink-gray-5 mt-0.5"
+							/>
 							<div>
-								<div class="text-sm text-ink-gray-8 leading-5">{{ __('One person only') }}</div>
-								<div class="text-xs text-ink-gray-5 mt-0.5 leading-5">{{ __('Multiple faces in the frame will be flagged.') }}</div>
+								<div class="text-sm text-ink-gray-8 leading-5">
+									{{ __('One person only') }}
+								</div>
+								<div class="text-xs text-ink-gray-5 mt-0.5 leading-5">
+									{{ __('Multiple faces in the frame will be flagged.') }}
+								</div>
 							</div>
 						</div>
 						<div class="flex items-start gap-3 px-4 py-3">
-							<span class="lucide-monitor-x size-4 shrink-0 text-ink-gray-5 mt-0.5" />
+							<span
+								class="lucide-monitor-x size-4 shrink-0 text-ink-gray-5 mt-0.5"
+							/>
 							<div>
-								<div class="text-sm text-ink-gray-8 leading-5">{{ __('Stay on this tab') }}</div>
-								<div class="text-xs text-ink-gray-5 mt-0.5 leading-5">{{ __('Switching tabs or minimizing the window is flagged immediately.') }}</div>
+								<div class="text-sm text-ink-gray-8 leading-5">
+									{{ __('Stay on this tab') }}
+								</div>
+								<div class="text-xs text-ink-gray-5 mt-0.5 leading-5">
+									{{
+										__(
+											'Switching tabs or minimizing the window is flagged immediately.'
+										)
+									}}
+								</div>
 							</div>
 						</div>
 						<div class="flex items-start gap-3 px-4 py-3">
-							<span class="lucide-camera-off size-4 shrink-0 text-ink-gray-5 mt-0.5" />
+							<span
+								class="lucide-camera-off size-4 shrink-0 text-ink-gray-5 mt-0.5"
+							/>
 							<div>
-								<div class="text-sm text-ink-gray-8 leading-5">{{ __('Keep camera connected') }}</div>
-								<div class="text-xs text-ink-gray-5 mt-0.5 leading-5">{{ __('Disconnecting your camera counts as a violation.') }}</div>
+								<div class="text-sm text-ink-gray-8 leading-5">
+									{{ __('Keep camera connected') }}
+								</div>
+								<div class="text-xs text-ink-gray-5 mt-0.5 leading-5">
+									{{ __('Disconnecting your camera counts as a violation.') }}
+								</div>
 							</div>
 						</div>
 						<div class="flex items-start gap-3 px-4 py-3 bg-surface-orange-1">
-							<span class="lucide-alert-triangle size-4 shrink-0 text-ink-orange-5 mt-0.5" />
+							<span
+								class="lucide-alert-triangle size-4 shrink-0 text-ink-orange-5 mt-0.5"
+							/>
 							<div class="text-sm text-ink-orange-6 leading-5">
-								{{ __('After {0} {1}, the quiz will be automatically submitted.').format(quiz.data.max_violations, quiz.data.max_violations == 1 ? __('violation') : __('violations')) }}
+								{{
+									__(
+										'After {0} {1}, the quiz will be automatically submitted.'
+									).format(
+										quiz.data.max_violations,
+										quiz.data.max_violations == 1
+											? __('violation')
+											: __('violations')
+									)
+								}}
 							</div>
 						</div>
 					</div>
@@ -411,15 +577,15 @@
 							</Button>
 							<Button
 								v-else-if="activeQuestion != questions.length"
-								@click="quiz.data.show_answers ? nextQuestion() : switchQuestion(activeQuestion + 1)"
+								@click="
+									quiz.data.show_answers
+										? nextQuestion()
+										: switchQuestion(activeQuestion + 1)
+								"
 							>
 								<span>{{ __('Next') }}</span>
 							</Button>
-							<Button
-								variant="solid"
-								v-else
-								@click="handleSubmitClick()"
-							>
+							<Button variant="solid" v-else @click="handleSubmitClick()">
 								<span>{{ __('Submit') }}</span>
 							</Button>
 						</div>
@@ -427,17 +593,49 @@
 				</div>
 			</div>
 			<!-- Activity log (shown during quiz, below the question card) -->
-			<div v-if="quiz.data.enable_proctoring && violationLog.length" class="border rounded-lg overflow-hidden mt-4">
-				<div class="px-4 py-2.5 border-b flex items-center justify-between bg-surface-gray-1">
-					<span class="text-xs font-semibold text-ink-gray-8">{{ __('Activity') }}</span>
-					<span class="text-xs text-ink-gray-5">{{ violationLog.length }} {{ violationLog.length == 1 ? __('event') : __('events') }}</span>
+			<div
+				v-if="quiz.data.enable_proctoring && violationLog.length"
+				class="border rounded-lg overflow-hidden mt-4"
+			>
+				<div
+					class="px-4 py-2.5 border-b flex items-center justify-between bg-surface-gray-1"
+				>
+					<span class="text-xs font-semibold text-ink-gray-8">{{
+						__('Activity')
+					}}</span>
+					<span class="text-xs text-ink-gray-5"
+						>{{ violationLog.length }}
+						{{ violationLog.length == 1 ? __('event') : __('events') }}</span
+					>
 				</div>
 				<div class="divide-y max-h-64 overflow-y-auto">
-					<div v-for="(entry, i) in violationLog" :key="i" class="flex items-center gap-2.5 px-4 py-2.5">
-						<span class="size-1.5 rounded-full shrink-0" :class="entry.severity === 'violation' ? 'bg-ink-red-5' : 'bg-ink-orange-4'" />
-						<span class="text-sm text-ink-gray-7 flex-1">{{ violationEventLabels[entry.eventType] || entry.eventType }}</span>
-						<span class="text-xs font-medium uppercase tracking-wide shrink-0" :class="entry.severity === 'violation' ? 'text-ink-red-5' : 'text-ink-orange-5'">
-							{{ entry.severity === 'violation' ? __('Violation') : __('Warning') }}
+					<div
+						v-for="(entry, i) in violationLog"
+						:key="i"
+						class="flex items-center gap-2.5 px-4 py-2.5"
+					>
+						<span
+							class="size-1.5 rounded-full shrink-0"
+							:class="
+								entry.severity === 'violation'
+									? 'bg-ink-red-5'
+									: 'bg-ink-orange-4'
+							"
+						/>
+						<span class="text-sm text-ink-gray-7 flex-1">{{
+							violationEventLabels[entry.eventType] || entry.eventType
+						}}</span>
+						<span
+							class="text-xs font-medium uppercase tracking-wide shrink-0"
+							:class="
+								entry.severity === 'violation'
+									? 'text-ink-red-5'
+									: 'text-ink-orange-5'
+							"
+						>
+							{{
+								entry.severity === 'violation' ? __('Violation') : __('Warning')
+							}}
 						</span>
 					</div>
 				</div>
@@ -464,15 +662,28 @@
 			<div class="border rounded-lg overflow-hidden">
 				<!-- Violation banner shown when quiz was auto-submitted due to max violations -->
 				<div
-					v-if="quiz.data.enable_proctoring && submissionReason === 'max_violations'"
+					v-if="
+						quiz.data.enable_proctoring && submissionReason === 'max_violations'
+					"
 					class="bg-surface-red-2 px-5 py-4 border-b border-outline-red-2"
 				>
 					<div class="flex items-center gap-2.5 mb-1">
 						<span class="lucide-shield-x size-4 text-ink-red-6 shrink-0" />
-						<span class="text-sm font-semibold text-ink-red-7">{{ __('Maximum violations reached') }}</span>
+						<span class="text-sm font-semibold text-ink-red-7">{{
+							__('Maximum violations reached')
+						}}</span>
 					</div>
 					<p class="text-sm text-ink-red-6 leading-5 pl-6.5">
-						{{ __('This quiz was submitted automatically because you reached the maximum of {0} {1}. Reach out to your instructor if you need to try again.').format(quiz.data.max_violations, quiz.data.max_violations == 1 ? __('violation') : __('violations')) }}
+						{{
+							__(
+								'This quiz was submitted automatically because you reached the maximum of {0} {1}. Reach out to your instructor if you need to try again.'
+							).format(
+								quiz.data.max_violations,
+								quiz.data.max_violations == 1
+									? __('violation')
+									: __('violations')
+							)
+						}}
 					</p>
 				</div>
 				<div class="p-10 space-y-2 text-center">
@@ -519,17 +730,49 @@
 				</div>
 			</div>
 			<!-- Activity log persists into summary view for proctored quizzes -->
-			<div v-if="quiz.data.enable_proctoring && violationLog.length" class="border rounded-lg overflow-hidden">
-				<div class="px-4 py-2.5 border-b flex items-center justify-between bg-surface-gray-1">
-					<span class="text-xs font-semibold text-ink-gray-8">{{ __('Activity') }}</span>
-					<span class="text-xs text-ink-gray-5">{{ violationLog.length }} {{ violationLog.length == 1 ? __('event') : __('events') }}</span>
+			<div
+				v-if="quiz.data.enable_proctoring && violationLog.length"
+				class="border rounded-lg overflow-hidden"
+			>
+				<div
+					class="px-4 py-2.5 border-b flex items-center justify-between bg-surface-gray-1"
+				>
+					<span class="text-xs font-semibold text-ink-gray-8">{{
+						__('Activity')
+					}}</span>
+					<span class="text-xs text-ink-gray-5"
+						>{{ violationLog.length }}
+						{{ violationLog.length == 1 ? __('event') : __('events') }}</span
+					>
 				</div>
 				<div class="divide-y max-h-64 overflow-y-auto">
-					<div v-for="(entry, i) in violationLog" :key="i" class="flex items-center gap-2.5 px-4 py-2.5">
-						<span class="size-1.5 rounded-full shrink-0" :class="entry.severity === 'violation' ? 'bg-ink-red-5' : 'bg-ink-orange-4'" />
-						<span class="text-sm text-ink-gray-7 flex-1">{{ violationEventLabels[entry.eventType] || entry.eventType }}</span>
-						<span class="text-xs font-medium uppercase tracking-wide shrink-0" :class="entry.severity === 'violation' ? 'text-ink-red-5' : 'text-ink-orange-5'">
-							{{ entry.severity === 'violation' ? __('Violation') : __('Warning') }}
+					<div
+						v-for="(entry, i) in violationLog"
+						:key="i"
+						class="flex items-center gap-2.5 px-4 py-2.5"
+					>
+						<span
+							class="size-1.5 rounded-full shrink-0"
+							:class="
+								entry.severity === 'violation'
+									? 'bg-ink-red-5'
+									: 'bg-ink-orange-4'
+							"
+						/>
+						<span class="text-sm text-ink-gray-7 flex-1">{{
+							violationEventLabels[entry.eventType] || entry.eventType
+						}}</span>
+						<span
+							class="text-xs font-medium uppercase tracking-wide shrink-0"
+							:class="
+								entry.severity === 'violation'
+									? 'text-ink-red-5'
+									: 'text-ink-orange-5'
+							"
+						>
+							{{
+								entry.severity === 'violation' ? __('Violation') : __('Warning')
+							}}
 						</span>
 					</div>
 				</div>
@@ -569,24 +812,54 @@
 	>
 		<template #default>
 			<div class="space-y-3">
-				<p v-if="questions.length - attemptedQuestions.length > 0" class="text-base text-ink-gray-6 leading-5">
-					{{ __('You have {0} unattempted {1}. They will be marked incorrect if you submit.').format(questions.length - attemptedQuestions.length, questions.length - attemptedQuestions.length == 1 ? __('question') : __('questions')) }}
+				<p
+					v-if="questions.length - attemptedQuestions.length > 0"
+					class="text-base text-ink-gray-6 leading-5"
+				>
+					{{
+						__(
+							'You have {0} unattempted {1}. They will be marked incorrect if you submit.'
+						).format(
+							questions.length - attemptedQuestions.length,
+							questions.length - attemptedQuestions.length == 1
+								? __('question')
+								: __('questions')
+						)
+					}}
 				</p>
 				<p v-else class="text-base text-ink-gray-6 leading-5">
 					{{ __('All questions have been attempted.') }}
 				</p>
 				<div class="space-y-1.5">
-					<div class="flex h-2.5 rounded-full overflow-hidden bg-surface-gray-3">
+					<div
+						class="flex h-2.5 rounded-full overflow-hidden bg-surface-gray-3"
+					>
 						<div
 							class="h-full rounded-full transition-all"
-							:class="attemptedQuestions.length === questions.length ? 'bg-surface-green-7' : 'bg-surface-green-7'"
-							:style="{ width: (attemptedQuestions.length / questions.length * 100) + '%' }"
+							:class="
+								attemptedQuestions.length === questions.length
+									? 'bg-surface-green-7'
+									: 'bg-surface-green-7'
+							"
+							:style="{
+								width:
+									(attemptedQuestions.length / questions.length) * 100 + '%',
+							}"
 						/>
 					</div>
 					<div class="flex justify-between text-xs">
-						<span class="text-ink-green-7 font-medium">{{ attemptedQuestions.length }} {{ __('attempted') }}</span>
-						<span :class="questions.length - attemptedQuestions.length > 0 ? 'text-ink-orange-7 font-medium' : 'text-ink-gray-5'">
-							{{ questions.length - attemptedQuestions.length }} {{ __('unattempted') }}
+						<span class="text-ink-green-7 font-medium"
+							>{{ attemptedQuestions.length }} {{ __('attempted') }}</span
+						>
+						<span
+							:class="
+								questions.length - attemptedQuestions.length > 0
+									? 'text-ink-orange-7 font-medium'
+									: 'text-ink-gray-5'
+							"
+						>
+							{{ questions.length - attemptedQuestions.length }}
+							{{ __('unattempted') }}
 						</span>
 					</div>
 				</div>
@@ -857,7 +1130,9 @@ const quizSubmission = createResource({
 			submission_reason: values?.submission_reason ?? 'manual',
 		}
 		if (!values?.skip_violation_events) {
-			params.violation_events = JSON.stringify([...violationLog.value].reverse())
+			params.violation_events = JSON.stringify(
+				[...violationLog.value].reverse()
+			)
 		}
 		return params
 	},
@@ -961,9 +1236,14 @@ const violationEventLabels = {
 }
 
 const handleViolation = (eventType) => {
-	if (submissionReason.value || quizSubmission.loading || quizSubmission.data) return
+	if (submissionReason.value || quizSubmission.loading || quizSubmission.data)
+		return
 	violationCount.value++
-	violationLog.value.unshift({ eventType, severity: 'violation', timestamp: new Date().toISOString() })
+	violationLog.value.unshift({
+		eventType,
+		severity: 'violation',
+		timestamp: new Date().toISOString(),
+	})
 	const remaining = quiz.data.max_violations - violationCount.value
 	if (remaining <= 0) {
 		submitQuiz('max_violations')
@@ -975,8 +1255,16 @@ const handleViolation = (eventType) => {
 
 const handleWarning = (eventType) => {
 	// Deduplicate consecutive warnings of the same type
-	if (violationLog.value[0]?.eventType === eventType && violationLog.value[0]?.severity === 'warning') return
-	violationLog.value.unshift({ eventType, severity: 'warning', timestamp: new Date().toISOString() })
+	if (
+		violationLog.value[0]?.eventType === eventType &&
+		violationLog.value[0]?.severity === 'warning'
+	)
+		return
+	violationLog.value.unshift({
+		eventType,
+		severity: 'warning',
+		timestamp: new Date().toISOString(),
+	})
 }
 
 const markAnswer = (index) => {
@@ -1132,13 +1420,11 @@ const createSubmission = (reason = 'manual') => {
 					// Submission failed for another reason (e.g. server error saving
 					// violation events). Re-try without violation events so the quiz
 					// still ends rather than being stuck.
-					quizSubmission.submit(
-						{
-							violation_count: violationCount.value,
-							submission_reason: reason,
-							skip_violation_events: true,
-						}
-					)
+					quizSubmission.submit({
+						violation_count: violationCount.value,
+						submission_reason: reason,
+						skip_violation_events: true,
+					})
 				}
 			},
 		}

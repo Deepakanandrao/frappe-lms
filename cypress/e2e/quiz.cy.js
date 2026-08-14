@@ -184,9 +184,10 @@ describe("Quiz", () => {
 						getVideoTracks: () => [mockTrack],
 						getTracks: () => [mockTrack],
 					};
-					cy.stub(win.navigator.mediaDevices, "getUserMedia").resolves(
-						mockStream
-					);
+					cy.stub(
+						win.navigator.mediaDevices,
+						"getUserMedia"
+					).resolves(mockStream);
 				},
 			});
 			cy.closeOnboardingModal();

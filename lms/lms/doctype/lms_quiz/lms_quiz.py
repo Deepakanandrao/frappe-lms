@@ -207,6 +207,7 @@ def submit_quiz(
 
 def _save_violation_events(submission_name: str, events: list):
 	from frappe.utils import now as _now
+
 	valid_types = {"tab_switch", "no_face", "multiple_faces", "focus_loss", "camera_disconnect"}
 	user = frappe.session.user
 	now = _now()
@@ -224,24 +225,37 @@ def _save_violation_events(submission_name: str, events: list):
 			continue
 		if severity not in ("violation", "warning"):
 			severity = "violation"
-		rows.append((
-			frappe.generate_hash(length=10),  # name
-			now,                              # creation
-			now,                              # modified
-			user,                             # modified_by
-			user,                             # owner
-			0,                                # docstatus
-			0,                                # idx
-			submission_name,                  # quiz_submission
-			event_type,                       # event_type
-			severity,                         # severity
-			timestamp,                        # timestamp
-		))
+		rows.append(
+			(
+				frappe.generate_hash(length=10),  # name
+				now,  # creation
+				now,  # modified
+				user,  # modified_by
+				user,  # owner
+				0,  # docstatus
+				0,  # idx
+				submission_name,  # quiz_submission
+				event_type,  # event_type
+				severity,  # severity
+				timestamp,  # timestamp
+			)
+		)
 	if rows:
 		frappe.db.bulk_insert(
 			"LMS Quiz Violation Log",
-			fields=["name", "creation", "modified", "modified_by", "owner",
-					"docstatus", "idx", "quiz_submission", "event_type", "severity", "timestamp"],
+			fields=[
+				"name",
+				"creation",
+				"modified",
+				"modified_by",
+				"owner",
+				"docstatus",
+				"idx",
+				"quiz_submission",
+				"event_type",
+				"severity",
+				"timestamp",
+			],
 			values=rows,
 		)
 
@@ -259,8 +273,10 @@ def is_open_ended_submission(submission: str) -> bool:
 def get_quiz_violation_logs(submission: str):
 	if not frappe.db.exists("LMS Quiz Submission", submission):
 		frappe.throw(_("Invalid submission."), frappe.ValidationError)
-	if not (frappe.db.get_value("LMS Quiz Submission", submission, "member") == frappe.session.user
-		or frappe.has_permission("LMS Quiz Submission", "read", submission)):
+	if not (
+		frappe.db.get_value("LMS Quiz Submission", submission, "member") == frappe.session.user
+		or frappe.has_permission("LMS Quiz Submission", "read", submission)
+	):
 		frappe.throw(_("Insufficient Permission"), frappe.PermissionError)
 	return frappe.get_all(
 		"LMS Quiz Violation Log",

@@ -2,11 +2,16 @@
 	<div class="flex flex-col min-h-0 h-full">
 		<!-- Setup phase -->
 		<template v-if="phase === 'setup'">
-			<div v-if="cameraError" class="bg-surface-red-1 text-ink-red-6 rounded-lg p-3 text-sm leading-5 mb-3">
+			<div
+				v-if="cameraError"
+				class="bg-surface-red-1 text-ink-red-6 rounded-lg p-3 text-sm leading-5 mb-3"
+			>
 				{{ cameraError }}
 			</div>
 
-			<div class="relative rounded-xl overflow-hidden bg-surface-gray-3 flex-1 min-h-0">
+			<div
+				class="relative rounded-xl overflow-hidden bg-surface-gray-3 flex-1 min-h-0"
+			>
 				<video
 					ref="videoEl"
 					autoplay
@@ -20,13 +25,24 @@
 					v-if="setupStatus !== 'ready'"
 					class="absolute bottom-0 inset-x-0 flex items-center justify-center gap-1.5 py-2 text-xs font-medium"
 					:class="{
-						'bg-black/50 text-white': setupStatus === 'loading' || setupStatus === 'detecting',
-						'bg-surface-red-2/90 text-ink-red-6': setupStatus === 'no_face' || setupStatus === 'multiple_faces',
+						'bg-black/50 text-white':
+							setupStatus === 'loading' || setupStatus === 'detecting',
+						'bg-surface-red-2/90 text-ink-red-6':
+							setupStatus === 'no_face' || setupStatus === 'multiple_faces',
 					}"
 				>
-					<span v-if="setupStatus === 'loading'" class="lucide-loader-2 size-3.5 animate-spin" />
-					<span v-else-if="setupStatus === 'no_face'" class="lucide-alert-circle size-3.5" />
-					<span v-else-if="setupStatus === 'multiple_faces'" class="lucide-users size-3.5" />
+					<span
+						v-if="setupStatus === 'loading'"
+						class="lucide-loader-2 size-3.5 animate-spin"
+					/>
+					<span
+						v-else-if="setupStatus === 'no_face'"
+						class="lucide-alert-circle size-3.5"
+					/>
+					<span
+						v-else-if="setupStatus === 'multiple_faces'"
+						class="lucide-users size-3.5"
+					/>
 					<span v-else class="lucide-scan-face size-3.5" />
 					{{ setupStatusLabel }}
 				</div>
@@ -36,7 +52,9 @@
 					v-else
 					class="absolute inset-0 ring-2 ring-inset ring-ink-green-5 rounded-xl pointer-events-none"
 				>
-					<div class="absolute top-2 right-2 flex items-center gap-1 bg-surface-green-1 text-ink-green-6 text-xs font-medium px-2 py-1 rounded-full">
+					<div
+						class="absolute top-2 right-2 flex items-center gap-1 bg-surface-green-1 text-ink-green-6 text-xs font-medium px-2 py-1 rounded-full"
+					>
 						<span class="lucide-check size-3" />
 						{{ __('Ready') }}
 					</div>
@@ -52,14 +70,19 @@
 				muted
 				playsinline
 				class="fixed pointer-events-none opacity-0"
-				style="width:160px;height:120px;left:-9999px;top:0;"
+				style="width: 160px; height: 120px; left: -9999px; top: 0"
 			/>
 			<div
 				class="flex items-center gap-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
-				:class="violationCount > 0 ? 'bg-surface-red-1 text-ink-red-6' : 'bg-surface-green-1 text-ink-green-6'"
+				:class="
+					violationCount > 0
+						? 'bg-surface-red-1 text-ink-red-6'
+						: 'bg-surface-green-1 text-ink-green-6'
+				"
 			>
 				<span class="lucide-camera size-4" />
-				{{ violationCount }} / {{ maxViolations }} {{ maxViolations == 1 ? __('violation') : __('violations') }}
+				{{ violationCount }} / {{ maxViolations }}
+				{{ maxViolations == 1 ? __('violation') : __('violations') }}
 			</div>
 		</template>
 	</div>
@@ -75,7 +98,13 @@ const props = defineProps({
 	violationCount: { type: Number, default: 0 },
 })
 
-const emit = defineEmits(['camera-ready', 'camera-lost', 'camera-denied', 'violation', 'warning'])
+const emit = defineEmits([
+	'camera-ready',
+	'camera-lost',
+	'camera-denied',
+	'violation',
+	'warning',
+])
 
 const videoEl = ref(null)
 const phase = ref('setup')
@@ -127,7 +156,9 @@ const startCamera = async () => {
 	try {
 		stream = await navigator.mediaDevices.getUserMedia({ video: true })
 	} catch {
-		cameraError.value = __('Camera access was denied. Please allow camera access and reload.')
+		cameraError.value = __(
+			'Camera access was denied. Please allow camera access and reload.'
+		)
 		emit('camera-denied')
 		return
 	}
@@ -137,9 +168,13 @@ const startCamera = async () => {
 	}
 
 	try {
-		await faceapi.nets.tinyFaceDetector.loadFromUri('/assets/lms/frontend/models')
+		await faceapi.nets.tinyFaceDetector.loadFromUri(
+			'/assets/lms/frontend/models'
+		)
 	} catch {
-		cameraError.value = __('Failed to load face detection models. Please reload.')
+		cameraError.value = __(
+			'Failed to load face detection models. Please reload.'
+		)
 		return
 	}
 
@@ -240,7 +275,10 @@ const onWindowBlur = () => {
 }
 
 const onWindowFocus = () => {
-	if (focusBlurTimer) { clearTimeout(focusBlurTimer); focusBlurTimer = null }
+	if (focusBlurTimer) {
+		clearTimeout(focusBlurTimer)
+		focusBlurTimer = null
+	}
 }
 
 const onCameraDisconnect = () => emit('violation', 'camera_disconnect')

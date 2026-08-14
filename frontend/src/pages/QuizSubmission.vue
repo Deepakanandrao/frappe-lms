@@ -32,7 +32,9 @@
 					</template>
 				</Popover>
 
-				<span class="hidden items-center gap-1.5 text-sm text-ink-gray-7 sm:flex">
+				<span
+					class="hidden items-center gap-1.5 text-sm text-ink-gray-7 sm:flex"
+				>
 					<span class="lucide-info size-4 shrink-0" aria-hidden="true" />
 					{{ ownSubmissionNotice }}
 				</span>
@@ -185,7 +187,9 @@
 				<div class="border-t px-5 py-5">
 					<div class="flex gap-6">
 						<div>
-							<div class="mb-0.5 text-xs text-ink-gray-5">{{ __('Score') }}</div>
+							<div class="mb-0.5 text-xs text-ink-gray-5">
+								{{ __('Score') }}
+							</div>
 							<div class="text-sm font-medium text-ink-gray-8">
 								{{ submissionDetails.doc.score }} /
 								{{ submissionDetails.doc.score_out_of }}
@@ -209,7 +213,6 @@
 						</div>
 					</div>
 				</div>
-
 			</aside>
 
 			<!-- Sits under the score on a phone, where it collapses: an attempt with

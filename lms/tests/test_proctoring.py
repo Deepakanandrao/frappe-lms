@@ -19,12 +19,11 @@ from unittest.mock import patch
 import frappe
 
 from lms.lms.doctype.lms_quiz.lms_quiz import (
-    _save_violation_events,
-    get_quiz_violation_logs,
-    is_open_ended_submission,
-    submit_quiz,
+	_save_violation_events,
+	get_quiz_violation_logs,
+	is_open_ended_submission,
+	submit_quiz,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared fixture builders
@@ -253,7 +252,11 @@ class TestSaveViolationEventsDB(unittest.TestCase):
 			self.submission.name,
 			[
 				{"eventType": "totally_fake", "severity": "violation"},
-				{"eventType": "camera_disconnect", "severity": "violation", "timestamp": "2026-07-01T10:00:00Z"},
+				{
+					"eventType": "camera_disconnect",
+					"severity": "violation",
+					"timestamp": "2026-07-01T10:00:00Z",
+				},
 			],
 		)
 		logs = _get_logs(self.submission.name)
@@ -306,9 +309,7 @@ class TestSubmitQuizWithViolations(unittest.TestCase):
 		self.assertEqual(count, 2)
 
 	def test_submission_reason_saved(self):
-		result = submit_quiz(
-			self.quiz.name, results=self._results(), submission_reason="max_violations"
-		)
+		result = submit_quiz(self.quiz.name, results=self._results(), submission_reason="max_violations")
 		reason = frappe.db.get_value("LMS Quiz Submission", result["submission"], "submission_reason")
 		self.assertEqual(reason, "max_violations")
 
