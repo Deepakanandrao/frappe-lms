@@ -616,8 +616,8 @@
 							class="size-1.5 rounded-full shrink-0"
 							:class="
 								entry.severity === 'violation'
-									? 'bg-ink-red-5'
-									: 'bg-ink-orange-4'
+									? 'bg-ink-red-6'
+									: 'bg-ink-orange-6'
 							"
 						/>
 						<span class="text-sm text-ink-gray-7 flex-1">{{
@@ -627,8 +627,8 @@
 							class="text-xs font-medium uppercase tracking-wide shrink-0"
 							:class="
 								entry.severity === 'violation'
-									? 'text-ink-red-5'
-									: 'text-ink-orange-5'
+									? 'text-ink-red-6'
+									: 'text-ink-orange-6'
 							"
 						>
 							{{
@@ -753,8 +753,8 @@
 							class="size-1.5 rounded-full shrink-0"
 							:class="
 								entry.severity === 'violation'
-									? 'bg-ink-red-5'
-									: 'bg-ink-orange-4'
+									? 'bg-ink-red-6'
+									: 'bg-ink-orange-6'
 							"
 						/>
 						<span class="text-sm text-ink-gray-7 flex-1">{{
@@ -764,8 +764,8 @@
 							class="text-xs font-medium uppercase tracking-wide shrink-0"
 							:class="
 								entry.severity === 'violation'
-									? 'text-ink-red-5'
-									: 'text-ink-orange-5'
+									? 'text-ink-red-6'
+									: 'text-ink-orange-6'
 							"
 						>
 							{{
