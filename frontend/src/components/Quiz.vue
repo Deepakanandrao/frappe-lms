@@ -671,7 +671,7 @@
 							__('Maximum violations reached')
 						}}</span>
 					</div>
-					<p class="text-sm text-ink-red-6 leading-5 pl-6.5">
+					<p class="text-sm text-ink-red-6 leading-5 ps-6.5">
 						{{
 							__(
 								'This quiz was submitted automatically because you reached the maximum of {0} {1}. Reach out to your instructor if you need to try again.'

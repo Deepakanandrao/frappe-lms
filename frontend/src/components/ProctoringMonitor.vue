@@ -53,7 +53,7 @@
 					class="absolute inset-0 ring-2 ring-inset ring-ink-green-5 rounded-xl pointer-events-none"
 				>
 					<div
-						class="absolute top-2 right-2 flex items-center gap-1 bg-surface-green-1 text-ink-green-6 text-xs font-medium px-2 py-1 rounded-full"
+						class="absolute top-2 end-2 flex items-center gap-1 bg-surface-green-1 text-ink-green-6 text-xs font-medium px-2 py-1 rounded-full"
 					>
 						<span class="lucide-check size-3" />
 						{{ __('Ready') }}
