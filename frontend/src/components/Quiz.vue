@@ -313,7 +313,11 @@
 							{{ __('Proctoring Rules') }}
 						</div>
 					</div>
-					<div class="divide-y flex-1 flex flex-col">
+					<!-- No flex-1 here. With flex-basis 0 the rules contribute nothing to
+					     the card's own height, so the card takes it from the row — and
+					     when the camera column beside it is the shorter of the two, the
+					     last rule falls outside the card and overflow-hidden clips it. -->
+					<div class="divide-y">
 						<div class="flex items-start gap-3 px-4 py-3">
 							<span
 								class="lucide-eye-off size-4 shrink-0 text-ink-gray-5 mt-0.5"

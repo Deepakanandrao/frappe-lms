@@ -133,6 +133,11 @@ describe("Quiz", () => {
 				"POST",
 				"**/api/method/lms.lms.doctype.lms_quiz.lms_quiz.submit_quiz"
 			).as("submitQuiz");
+
+			// show_answers defaults to 1 on LMS Quiz, so a choice question offers
+			// Check before it offers Submit. Submit only replaces it once the
+			// answer has been revealed.
+			cy.button("Check").click();
 			cy.button("Submit").click();
 			cy.wait("@submitQuiz", { timeout: 15000 });
 
@@ -170,7 +175,7 @@ describe("Quiz", () => {
 			cy.contains("After 3 violations").should("be.visible");
 		});
 
-		it("enables Start Quiz once camera access is granted", () => {
+		it("starts face detection once camera access is granted", () => {
 			cy.login();
 			cy.visit(`/lms/quiz/${proctoredQuizName}`, {
 				onBeforeLoad(win) {
@@ -184,6 +189,16 @@ describe("Quiz", () => {
 						getVideoTracks: () => [mockTrack],
 						getTracks: () => [mockTrack],
 					};
+					// navigator.mediaDevices exists only in a secure context. CI serves
+					// the app over plain http, so the object has to be created before
+					// there is anything to stub.
+					if (!win.navigator.mediaDevices) {
+						Object.defineProperty(win.navigator, "mediaDevices", {
+							value: {},
+							configurable: true,
+							writable: true,
+						});
+					}
 					cy.stub(
 						win.navigator.mediaDevices,
 						"getUserMedia"
@@ -192,12 +207,13 @@ describe("Quiz", () => {
 			});
 			cy.closeOnboardingModal();
 
-			// With camera available the monitor loads models; once a face is
-			// detected (or the camera-ready path completes) the button enables.
-			// In CI with a stubbed stream, camera-ready fires after model load.
-			cy.button("Start Quiz", { timeout: 20000 }).should(
-				"not.be.disabled"
-			);
+			// Accepting the stream moves the monitor from "Loading camera" to asking
+			// for a face, which is as far as CI can go: Start Quiz unlocks on a
+			// detected face, and a stubbed stream carries no frames to detect one in.
+			cy.contains("Position your face in the frame", {
+				timeout: 20000,
+			}).should("be.visible");
+			cy.button("Start Quiz").should("be.disabled");
 		});
 	});
 });
