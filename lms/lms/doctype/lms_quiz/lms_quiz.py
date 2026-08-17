@@ -278,6 +278,11 @@ def get_quiz_violation_logs(submission: str):
 		or frappe.has_permission("LMS Quiz Submission", "read", submission)
 	):
 		frappe.throw(_("Insufficient Permission"), frappe.PermissionError)
+	# The caller is already authorised above, against the parent submission: either they
+	# own it or they hold read on it. The log rows carry no permissions of their own —
+	# they are only ever read through this endpoint — so reading them under the check
+	# already made is the access rule, not a bypass of one.
+	# nosemgrep: lms-unjustified-ignore-permissions - access is gated on the parent submission above
 	return frappe.get_all(
 		"LMS Quiz Violation Log",
 		filters={"quiz_submission": submission},

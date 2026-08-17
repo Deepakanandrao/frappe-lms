@@ -106,7 +106,7 @@
 									<span class="me-2 text-ink-gray-4">
 										{{ __('Q{0}:').format(index + 1) }}
 									</span>
-									<span v-html="sanitizeRichHTML(row.question)" />
+									<span v-safe-html:rich="row.question" />
 								</div>
 								<span
 									class="mt-2 size-1.5 shrink-0 rounded-full"
@@ -124,7 +124,7 @@
 								>
 									{{ __('Answer:') }}
 								</span>
-								<span v-html="sanitizeRichHTML(row.answer)" />
+								<span v-safe-html:rich="row.answer" />
 							</div>
 						</div>
 						<!-- Only an open-ended answer is a judgement call; a choice was
