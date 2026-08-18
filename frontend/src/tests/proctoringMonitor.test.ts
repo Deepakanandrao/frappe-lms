@@ -153,3 +153,60 @@ describe('ProctoringMonitor — monitoring phase', () => {
 		expect(wrapper.emitted('violation')).toContainEqual(['camera_disconnect'])
 	})
 })
+
+// The floating preview is teleported to the body, so it is queried there rather
+// than through the wrapper.
+describe('ProctoringMonitor — floating camera', () => {
+	const buttonLabelled = (label: string) =>
+		[...document.body.querySelectorAll('button')].find(
+			(button) => button.getAttribute('aria-label') === label
+		)
+
+	beforeEach(() => {
+		// Earlier tests mount without unmounting, and their teleported panels stay
+		// behind. Start each of these from an empty body so the queries are exact.
+		document.body.innerHTML = ''
+	})
+
+	it('shows the camera over the quiz while monitoring', async () => {
+		const wrapper = mountMonitor({ active: true })
+		await flushPromises()
+
+		expect(document.body.querySelector('video')).not.toBeNull()
+		expect(buttonLabelled('Minimise camera')).toBeDefined()
+		expect(document.body.textContent).not.toContain('Show camera')
+
+		wrapper.unmount()
+	})
+
+	it('keeps the video mounted once minimised, so detection continues', async () => {
+		const wrapper = mountMonitor({ active: true })
+		await flushPromises()
+
+		buttonLabelled('Minimise camera')!.click()
+		await flushPromises()
+
+		// The point of the whole feature: hiding the preview must not take the
+		// stream away, or the student collects violations for a camera they were
+		// invited to put out of sight.
+		expect(document.body.querySelector('video')).not.toBeNull()
+		expect(document.body.textContent).toContain('Show camera')
+
+		wrapper.unmount()
+	})
+
+	it('restores the camera after minimising', async () => {
+		const wrapper = mountMonitor({ active: true })
+		await flushPromises()
+
+		buttonLabelled('Minimise camera')!.click()
+		await flushPromises()
+		buttonLabelled('Show camera')!.click()
+		await flushPromises()
+
+		expect(buttonLabelled('Minimise camera')).toBeDefined()
+		expect(document.body.textContent).not.toContain('Show camera')
+
+		wrapper.unmount()
+	})
+})

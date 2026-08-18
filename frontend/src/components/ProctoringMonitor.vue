@@ -62,16 +62,55 @@
 			</div>
 		</template>
 
-		<!-- Monitoring phase: violation pill + off-screen video for face detection -->
+		<!-- Monitoring phase: the count stays inline in the status bar, the camera
+		     itself floats over the quiz so the student can see what is being
+		     watched. Teleported to the body so no scroll container or stacking
+		     context along the way can clip it. -->
 		<template v-if="phase === 'monitoring'">
-			<video
-				ref="videoEl"
-				autoplay
-				muted
-				playsinline
-				class="fixed pointer-events-none opacity-0"
-				style="width: 160px; height: 120px; left: -9999px; top: 0"
-			/>
+			<Teleport to="body">
+				<div class="fixed bottom-4 end-4 z-50 flex flex-col items-end gap-2">
+					<!-- Collapsed to nothing rather than hidden: detection reads frames
+					     off this element, and a display:none video stops feeding them.
+					     Minimising is meant to spare the student the distraction, not
+					     to stop the proctoring they agreed to. -->
+					<div
+						class="overflow-hidden rounded-xl bg-surface-base shadow-lg transition-all"
+						:class="
+							minimized ? 'pointer-events-none size-0 opacity-0' : 'w-44 border'
+						"
+					>
+						<div class="relative">
+							<video
+								ref="videoEl"
+								autoplay
+								muted
+								playsinline
+								class="block aspect-[4/3] w-full bg-surface-gray-3 object-cover"
+							/>
+							<button
+								type="button"
+								class="absolute end-1.5 top-1.5 rounded-md bg-black/50 p-1 text-white"
+								:aria-label="__('Minimise camera')"
+								@click="minimized = true"
+							>
+								<span class="lucide-minus size-3.5" aria-hidden="true" />
+							</button>
+						</div>
+					</div>
+
+					<button
+						v-if="minimized"
+						type="button"
+						class="flex items-center gap-1.5 rounded-md border bg-surface-base px-2.5 py-1.5 text-xs font-medium text-ink-gray-7 shadow-lg"
+						:aria-label="__('Show camera')"
+						@click="minimized = false"
+					>
+						<span class="lucide-camera size-3.5" aria-hidden="true" />
+						{{ __('Show camera') }}
+					</button>
+				</div>
+			</Teleport>
+
 			<div
 				class="flex items-center gap-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
 				:class="
@@ -107,6 +146,10 @@ const emit = defineEmits([
 ])
 
 const videoEl = ref(null)
+
+// Whether the floating preview is collapsed during the quiz. Purely visual —
+// the stream and the detection loop keep running either way.
+const minimized = ref(false)
 const phase = ref('setup')
 const setupStatus = ref('loading')
 const cameraError = ref('')
