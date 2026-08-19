@@ -82,7 +82,17 @@
 					{{ submissionDetails.doc.quiz_title }}
 				</h1>
 
-				<div class="divide-y">
+				<!-- An attempt cut short by the violation limit can be submitted before
+				     a single answer is given, and an empty column beside a populated
+				     sidebar reads as a page that failed to load. -->
+				<p
+					v-if="!submissionDetails.doc.result?.length"
+					class="px-5 text-base leading-6 text-ink-gray-5"
+				>
+					{{ __('No questions were attempted in this submission.') }}
+				</p>
+
+				<div v-else class="divide-y">
 					<div
 						v-for="(row, index) in submissionDetails.doc.result"
 						:key="row.name"
@@ -288,6 +298,41 @@
 										· {{ formatTime(entry.timestamp) }}
 									</span>
 								</div>
+								<!-- What the camera saw as the event fired, behind a disclosure:
+								     a run of full-size stills buries the timeline it belongs to,
+								     and the log is read to find the moment worth looking at
+								     rather than to look at all of them.
+								     Absent on events recorded before frames were captured, and
+								     on a camera disconnect, where there was nothing left to
+								     draw — so the entry stands without it. -->
+								<details v-if="safeUrl(entry.frame)" class="group mt-1.5">
+									<!-- Subordinate to the event it belongs to: the timeline is
+									     read for what happened and when, and the snapshot is the
+									     follow-up. The label states what opening it costs the
+									     reader, and swaps on open so the control still describes
+									     what it does. -->
+									<summary
+										class="w-fit cursor-pointer list-none text-xs text-ink-gray-5 underline decoration-outline-gray-2 underline-offset-2 hover:text-ink-gray-7 hover:decoration-ink-gray-7 [&::-webkit-details-marker]:hidden"
+									>
+										{{ __('Snapshot') }}
+									</summary>
+									<a
+										v-external
+										:href="safeUrl(entry.frame)"
+										class="mt-1.5 block"
+									>
+										<img
+											:src="safeUrl(entry.frame)"
+											:alt="
+												__('Camera at {0}').format(
+													violationEventLabels[entry.event_type] ||
+														entry.event_type
+												)
+											"
+											class="w-full rounded border"
+										/>
+									</a>
+								</details>
 							</li>
 						</ol>
 
@@ -317,6 +362,7 @@ import {
 } from 'frappe-ui'
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDebounceFn, useMediaQuery } from '@vueuse/core'
+import { safeUrl } from '@/utils/safeUrl'
 import PageHeader from '@/components/Layouts/PageHeader.vue'
 import PageBody from '@/components/Layouts/PageBody.vue'
 import HeaderButton from '@/components/HeaderButton.vue'

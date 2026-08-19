@@ -596,7 +596,7 @@
 			</div>
 			<!-- Activity log (shown during quiz, below the question card) -->
 			<div
-				v-if="quiz.data.enable_proctoring && violationLog.length"
+				v-if="quiz.data.enable_proctoring && summaryLog.length"
 				class="border rounded-lg overflow-hidden mt-4"
 			>
 				<div
@@ -606,13 +606,13 @@
 						__('Activity')
 					}}</span>
 					<span class="text-xs text-ink-gray-5"
-						>{{ violationLog.length }}
-						{{ violationLog.length == 1 ? __('event') : __('events') }}</span
+						>{{ summaryLog.length }}
+						{{ summaryLog.length == 1 ? __('event') : __('events') }}</span
 					>
 				</div>
 				<div class="divide-y max-h-64 overflow-y-auto">
 					<div
-						v-for="(entry, i) in violationLog"
+						v-for="(entry, i) in summaryLog"
 						:key="i"
 						class="flex items-center gap-2.5 px-4 py-2.5"
 					>
@@ -627,6 +627,25 @@
 						<span class="text-sm text-ink-gray-7 flex-1">{{
 							violationEventLabels[entry.eventType] || entry.eventType
 						}}</span>
+						<!-- What the camera saw as the event fired. The stored file is shown
+						     rather than the frame the browser still holds: it is the same record
+						     the instructor reads, and safeUrl drops a data: URI in any case. -->
+						<a
+							v-if="safeUrl(entry.frame)"
+							v-external
+							:href="safeUrl(entry.frame)"
+							class="shrink-0"
+						>
+							<img
+								:src="safeUrl(entry.frame)"
+								:alt="
+									__('Camera at {0}').format(
+										violationEventLabels[entry.eventType] || entry.eventType
+									)
+								"
+								class="h-8 w-11 rounded border object-cover"
+							/>
+						</a>
 						<span
 							class="text-xs font-medium uppercase tracking-wide shrink-0"
 							:class="
@@ -733,7 +752,7 @@
 			</div>
 			<!-- Activity log persists into summary view for proctored quizzes -->
 			<div
-				v-if="quiz.data.enable_proctoring && violationLog.length"
+				v-if="quiz.data.enable_proctoring && summaryLog.length"
 				class="border rounded-lg overflow-hidden"
 			>
 				<div
@@ -743,13 +762,13 @@
 						__('Activity')
 					}}</span>
 					<span class="text-xs text-ink-gray-5"
-						>{{ violationLog.length }}
-						{{ violationLog.length == 1 ? __('event') : __('events') }}</span
+						>{{ summaryLog.length }}
+						{{ summaryLog.length == 1 ? __('event') : __('events') }}</span
 					>
 				</div>
 				<div class="divide-y max-h-64 overflow-y-auto">
 					<div
-						v-for="(entry, i) in violationLog"
+						v-for="(entry, i) in summaryLog"
 						:key="i"
 						class="flex items-center gap-2.5 px-4 py-2.5"
 					>
@@ -764,6 +783,25 @@
 						<span class="text-sm text-ink-gray-7 flex-1">{{
 							violationEventLabels[entry.eventType] || entry.eventType
 						}}</span>
+						<!-- What the camera saw as the event fired. The stored file is shown
+						     rather than the frame the browser still holds: it is the same record
+						     the instructor reads, and safeUrl drops a data: URI in any case. -->
+						<a
+							v-if="safeUrl(entry.frame)"
+							v-external
+							:href="safeUrl(entry.frame)"
+							class="shrink-0"
+						>
+							<img
+								:src="safeUrl(entry.frame)"
+								:alt="
+									__('Camera at {0}').format(
+										violationEventLabels[entry.eventType] || entry.eventType
+									)
+								"
+								class="h-8 w-11 rounded border object-cover"
+							/>
+						</a>
 						<span
 							class="text-xs font-medium uppercase tracking-wide shrink-0"
 							:class="
@@ -891,6 +929,7 @@ import {
 	watch,
 } from 'vue'
 import { timeAgo } from '@/utils/format'
+import { safeUrl } from '@/utils/safeUrl'
 import ProgressBar from '@/components/ProgressBar.vue'
 import ResponsiveListView from '@/components/ResponsiveListView.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
@@ -942,6 +981,19 @@ onUnmounted(() => {
 	stopTimer()
 })
 
+// Oldest first. violationLog is built newest-first for the on-screen activity
+// list, but the server derives the stored violation count from this payload, so
+// it ships in the order the events actually happened.
+// withFrames=false for the pagehide beacon: that goes out as a query string, and a
+// handful of base64 stills would push it past the URL limit and drop the log
+// entirely. The events matter more there than the pictures of them.
+const serialiseViolationLog = (withFrames = true) =>
+	JSON.stringify(
+		[...violationLog.value]
+			.reverse()
+			.map(({ frame, ...event }) => (withFrames ? { ...event, frame } : event))
+	)
+
 const handlePageHide = () => {
 	if (activeQuestion.value > 0 && !quizSubmission.data) {
 		const params = new URLSearchParams({
@@ -950,6 +1002,11 @@ const handlePageHide = () => {
 			violation_count: String(violationCount.value),
 			submission_reason: 'browser_closed',
 		})
+		// Beacons go out as a query string, so only spend the URL budget on the
+		// log when there is one.
+		if (violationLog.value.length) {
+			params.set('violation_events', serialiseViolationLog(false))
+		}
 
 		navigator.sendBeacon(
 			'/api/method/lms.lms.doctype.lms_quiz.lms_quiz.submit_quiz?' +
@@ -1124,18 +1181,13 @@ watch(
 const quizSubmission = createResource({
 	url: 'lms.lms.doctype.lms_quiz.lms_quiz.submit_quiz',
 	makeParams(values) {
-		const params = {
+		return {
 			quiz: quiz.data.name,
 			results: localStorage.getItem(quiz.data.title) || '[]',
 			violation_count: values?.violation_count ?? violationCount.value,
 			submission_reason: values?.submission_reason ?? 'manual',
+			violation_events: serialiseViolationLog(),
 		}
-		if (!values?.skip_violation_events) {
-			params.violation_events = JSON.stringify(
-				[...violationLog.value].reverse()
-			)
-		}
-		return params
 	},
 })
 
@@ -1228,6 +1280,37 @@ const startQuiz = () => {
 	if (quiz.data.enable_proctoring) proctoringActive.value = true
 }
 
+// The stored log, read back after submitting. It is the same rows an instructor
+// sees, and unlike the client's own list it carries the camera stills as file URLs
+// rather than data: URIs.
+const storedViolationLog = createResource({
+	url: 'lms.lms.doctype.lms_quiz.lms_quiz.get_quiz_violation_logs',
+	makeParams() {
+		return { submission: quizSubmission.data?.submission }
+	},
+})
+
+watch(
+	() => quizSubmission.data?.submission,
+	(submission) => {
+		if (submission) storedViolationLog.fetch()
+	}
+)
+
+// Prefer the stored log once it lands. Before that — and during the quiz itself,
+// where there is no submission to read — the client's own list stands in, so the
+// activity table is never empty while events are happening.
+const summaryLog = computed(() =>
+	storedViolationLog.data?.length
+		? storedViolationLog.data.map((row) => ({
+				eventType: row.event_type,
+				severity: row.severity,
+				timestamp: row.timestamp,
+				frame: row.frame,
+		  }))
+		: violationLog.value
+)
+
 const violationEventLabels = {
 	tab_switch: __('Tab switch'),
 	no_face: __('Face not visible'),
@@ -1236,7 +1319,7 @@ const violationEventLabels = {
 	camera_disconnect: __('Camera disconnected'),
 }
 
-const handleViolation = (eventType) => {
+const handleViolation = (eventType, frame = null) => {
 	if (submissionReason.value || quizSubmission.loading || quizSubmission.data)
 		return
 	violationCount.value++
@@ -1244,6 +1327,7 @@ const handleViolation = (eventType) => {
 		eventType,
 		severity: 'violation',
 		timestamp: new Date().toISOString(),
+		frame,
 	})
 	const remaining = quiz.data.max_violations - violationCount.value
 	if (remaining <= 0) {
@@ -1254,7 +1338,7 @@ const handleViolation = (eventType) => {
 	}
 }
 
-const handleWarning = (eventType) => {
+const handleWarning = (eventType, frame = null) => {
 	// Deduplicate consecutive warnings of the same type
 	if (
 		violationLog.value[0]?.eventType === eventType &&
@@ -1265,6 +1349,7 @@ const handleWarning = (eventType) => {
 		eventType,
 		severity: 'warning',
 		timestamp: new Date().toISOString(),
+		frame,
 	})
 }
 
@@ -1418,14 +1503,18 @@ const createSubmission = (reason = 'manual') => {
 						window.location.reload()
 					}, 3000)
 				} else {
-					// Submission failed for another reason (e.g. server error saving
-					// violation events). Re-try without violation events so the quiz
-					// still ends rather than being stuck.
-					quizSubmission.submit({
-						violation_count: violationCount.value,
-						submission_reason: reason,
-						skip_violation_events: true,
-					})
+					// Never re-submit automatically here. A failure can land after the
+					// server already created the submission — or its response can simply
+					// be lost — and a second POST would spend another attempt and record
+					// a duplicate. Saving the violation log is best effort on the server,
+					// so it can no longer be the thing that fails a submission; anything
+					// reaching this branch is worth showing to the learner instead.
+					toast.error(
+						__(
+							err?.messages?.[0] ||
+								'Could not submit the quiz. Please try again.'
+						)
+					)
 				}
 			},
 		}

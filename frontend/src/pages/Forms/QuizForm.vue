@@ -32,7 +32,7 @@
 				</router-link>
 				<HeaderButton
 					v-if="quizDetails.doc?.name"
-					:label="__('Delete quiz')"
+					:label="__('Delete')"
 					icon="lucide-trash-2"
 					theme="red"
 					@click="deleteQuiz"

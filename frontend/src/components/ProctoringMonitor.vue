@@ -160,7 +160,17 @@ let monitorInterval = null
 let focusBlurTimer = null
 let noFaceStreak = 0
 let multiFaceStreak = 0
+// When each condition was first warned about, so the violation can be held back
+// until it has actually persisted. 0 means "not currently warned".
+let noFaceWarnedAt = 0
+let multiFaceWarnedAt = 0
 const STREAK_THRESHOLD = 3
+// How long a warned condition has to persist before it counts as a violation.
+const ESCALATION_GAP = 10_000
+// Wide enough to recognise a face and read a room, small enough that forty of them
+// still make a reasonable request.
+const FRAME_WIDTH = 320
+const FRAME_QUALITY = 0.6
 let cameraReadyEmitted = false
 
 const setupStatusLabel = computed(() => {
@@ -284,37 +294,90 @@ const runMonitorDetection = async () => {
 		new faceapi.TinyFaceDetectorOptions()
 	)
 	if (detections.length === 0) {
-		noFaceStreak++
 		multiFaceStreak = 0
-		if (noFaceStreak >= STREAK_THRESHOLD) {
-			noFaceStreak = 0
-			emit('violation', 'no_face')
-		} else if (noFaceStreak >= 2) {
-			emit('warning', 'no_face')
-		}
+		multiFaceWarnedAt = 0
+		noFaceStreak++
+		escalate('no_face')
 	} else if (detections.length > 1) {
-		multiFaceStreak++
 		noFaceStreak = 0
-		if (multiFaceStreak >= STREAK_THRESHOLD) {
-			multiFaceStreak = 0
-			emit('violation', 'multiple_faces')
-		} else if (multiFaceStreak >= 2) {
-			emit('warning', 'multiple_faces')
-		}
+		noFaceWarnedAt = 0
+		multiFaceStreak++
+		escalate('multiple_faces')
 	} else {
 		noFaceStreak = 0
 		multiFaceStreak = 0
+		noFaceWarnedAt = 0
+		multiFaceWarnedAt = 0
+	}
+}
+
+/**
+ * Warn first, and only call it a violation if nothing has changed ESCALATION_GAP
+ * later. Looking away for a moment, or a detector that drops a frame, is not
+ * what proctoring is for — the warning is the student's chance to correct it.
+ *
+ * While the condition persists the violation repeats on the same interval, so
+ * walking away for a minute still costs more than glancing at the door.
+ */
+const escalate = (kind) => {
+	const noFace = kind === 'no_face'
+	const streak = noFace ? noFaceStreak : multiFaceStreak
+	const warnedAt = noFace ? noFaceWarnedAt : multiFaceWarnedAt
+	const now = Date.now()
+
+	if (!warnedAt) {
+		// A single missed frame is noise; wait for the condition to hold.
+		if (streak < STREAK_THRESHOLD) return
+		if (noFace) noFaceWarnedAt = now
+		else multiFaceWarnedAt = now
+		emit('warning', kind, captureFrame())
+		return
+	}
+
+	if (now - warnedAt < ESCALATION_GAP) return
+	if (noFace) noFaceWarnedAt = now
+	else multiFaceWarnedAt = now
+	emit('violation', kind, captureFrame())
+}
+
+/**
+ * A still of what the camera saw as the event fired, small enough to travel with
+ * the event payload and to sit in a table afterwards.
+ *
+ * Returns null rather than throwing when there is nothing to draw — a
+ * disconnected camera leaves an element that will not paint, and the event it
+ * raised still stands on its own. Only the picture is lost.
+ */
+const captureFrame = () => {
+	const video = videoEl.value
+	if (!video || video.readyState < 2 || !video.videoWidth) return null
+	try {
+		const canvas = document.createElement('canvas')
+		canvas.width = FRAME_WIDTH
+		canvas.height = Math.round(
+			(video.videoHeight / video.videoWidth) * FRAME_WIDTH
+		)
+		canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+		return canvas.toDataURL('image/jpeg', FRAME_QUALITY)
+	} catch {
+		return null
 	}
 }
 
 const onVisibilityChange = () => {
-	if (document.visibilityState === 'hidden') emit('violation', 'tab_switch')
+	// The element keeps its frames while the tab is hidden, so the still shows
+	// what the camera saw at the moment they switched away.
+	if (document.visibilityState === 'hidden')
+		emit('violation', 'tab_switch', captureFrame())
 }
 
 const onWindowBlur = () => {
 	// Tab switch is already handled by visibilitychange — skip to avoid duplicate events
 	if (document.visibilityState === 'hidden') return
-	focusBlurTimer = setTimeout(() => emit('violation', 'focus_loss'), 10_000)
+	focusBlurTimer = setTimeout(
+		() => emit('violation', 'focus_loss', captureFrame()),
+		10_000
+	)
 }
 
 const onWindowFocus = () => {
@@ -324,7 +387,8 @@ const onWindowFocus = () => {
 	}
 }
 
-const onCameraDisconnect = () => emit('violation', 'camera_disconnect')
+const onCameraDisconnect = () =>
+	emit('violation', 'camera_disconnect', captureFrame())
 
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 

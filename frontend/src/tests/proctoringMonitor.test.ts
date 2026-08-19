@@ -72,6 +72,11 @@ afterEach(() => {
 	vi.clearAllMocks()
 })
 
+// Each event now carries a camera still as its second argument, so assertions read
+// the event type rather than matching the whole payload.
+const emittedTypes = (wrapper: any, name: string): string[] =>
+	(wrapper.emitted(name) ?? []).map(([type]: [string]) => type)
+
 // ─── Mount helper ─────────────────────────────────────────────────────────────
 
 const mountMonitor = (props: Partial<{ active: boolean; violationCount: number }> = {}) =>
@@ -140,7 +145,7 @@ describe('ProctoringMonitor — monitoring phase', () => {
 		})
 		document.dispatchEvent(new Event('visibilitychange'))
 
-		expect(wrapper.emitted('violation')).toContainEqual(['tab_switch'])
+		expect(emittedTypes(wrapper, 'violation')).toContain('tab_switch')
 	})
 
 	it('emits violation("camera_disconnect") when the video track ends', async () => {
@@ -150,7 +155,67 @@ describe('ProctoringMonitor — monitoring phase', () => {
 		expect(trackEndedHandler).not.toBeNull()
 		trackEndedHandler!()
 
-		expect(wrapper.emitted('violation')).toContainEqual(['camera_disconnect'])
+		expect(emittedTypes(wrapper, 'violation')).toContain('camera_disconnect')
+	})
+})
+
+describe('ProctoringMonitor — escalation timing', () => {
+	beforeEach(() => {
+		document.body.innerHTML = ''
+		// Fake timers drive both the 2s detection loop and Date.now(), which is
+		// what the escalation gap is measured against.
+		vi.useFakeTimers()
+	})
+
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	// jsdom leaves readyState at 0 (HAVE_NOTHING) and runMonitorDetection skips
+	// any frame below HAVE_CURRENT_DATA, so without this the loop never looks.
+	const mountMonitoring = async () => {
+		const wrapper = mountMonitor({ active: true })
+		await vi.advanceTimersByTimeAsync(0)
+		Object.defineProperty(document.body.querySelector('video')!, 'readyState', {
+			value: 4,
+			configurable: true,
+		})
+		return wrapper
+	}
+
+	it('warns first and holds the violation back for 10s', async () => {
+		// detectAllFaces resolves [] by default — nobody in frame.
+		const wrapper = await mountMonitoring()
+
+		// Three consecutive misses on the 2s loop earn the warning.
+		await vi.advanceTimersByTimeAsync(6000)
+		expect(emittedTypes(wrapper, 'warning')).toContain('no_face')
+		expect(wrapper.emitted('violation')).toBeUndefined()
+
+		// Still only a warning at 9.999s after it — the gap is a full 10 seconds.
+		await vi.advanceTimersByTimeAsync(9999)
+		expect(wrapper.emitted('violation')).toBeUndefined()
+
+		// The next detection pass after the gap elapses records the violation.
+		await vi.advanceTimersByTimeAsync(1)
+		expect(emittedTypes(wrapper, 'violation')).toContain('no_face')
+
+		wrapper.unmount()
+	})
+
+	it('does not escalate when the face comes back within the gap', async () => {
+		const wrapper = await mountMonitoring()
+
+		await vi.advanceTimersByTimeAsync(6000)
+		expect(emittedTypes(wrapper, 'warning')).toContain('no_face')
+
+		// One face again, well inside the 10s the student had to correct it.
+		detectAllFacesMock.mockResolvedValue([{}])
+		await vi.advanceTimersByTimeAsync(20000)
+
+		expect(wrapper.emitted('violation')).toBeUndefined()
+
+		wrapper.unmount()
 	})
 })
 
