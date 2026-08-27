@@ -234,11 +234,19 @@ def _build_proctoring_record(
 ) -> dict:
 	"""Decide what proctoring evidence is actually stored for a submission.
 
-	Every field here is reported by the learner's own browser, so none of it is taken at face
-	value. The event log is treated as the record and the stored count is derived from it, so a
-	learner cannot log five tab switches and report zero. A caller that sends no event list at
-	all (the pagehide beacon) keeps its reported count — there is nothing to derive from — but
-	still cannot claim a reason its count does not support.
+	Every field here is reported by the learner's own browser, so the fields are checked against
+	each other rather than believed one at a time. The event log is treated as the record and the
+	stored count is derived from it, so a learner cannot log five tab switches and report zero,
+	nor inflate a count past the events behind it. A caller that sends no event list at all (the
+	pagehide beacon) keeps its reported count — there is nothing to derive from — but still cannot
+	claim a reason its count does not support.
+
+	What cross-checking cannot do is catch a client that reports nothing. An empty event list with
+	a zero count is indistinguishable from an attempt that had nothing to report, and no rule here
+	can separate them while the browser is the only witness — tightening one field only moves
+	which field a tampered client has to lie about. So a clean log is the absence of evidence, not
+	evidence of absence. Making silence itself suspicious takes a client that checks in on a
+	schedule, so that a gap in the trail is the finding.
 	"""
 	reason = submission_reason if submission_reason in SUBMISSION_REASONS else "manual"
 
@@ -416,6 +424,12 @@ def _save_violation_frame(log_name: str, data_url: str) -> bool:
 	if os.path.splitext(filename)[1].lower() not in ALLOWED_DATAURL_IMAGE_EXTENSIONS:
 		return False
 
+	# The learner is writing evidence against their own attempt: File checks write on the
+	# doctype it is attached to, and a student holds nothing on LMS Quiz Violation Log — only
+	# System Manager and Instructor do. Without the bypass the attachment fails for exactly the
+	# person it is meant to record. The row it hangs off was created by this same call chain a
+	# moment earlier, and the frame reaches nobody the row does not.
+	# nosemgrep: lms-unjustified-ignore-permissions - proctoring evidence written by the learner it records
 	frappe.get_doc(
 		{
 			"doctype": "File",
