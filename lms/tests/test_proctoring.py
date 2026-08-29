@@ -357,7 +357,12 @@ class TestSubmitQuizWithViolations(unittest.TestCase):
 	@classmethod
 	def tearDownClass(cls):
 		frappe.session.user = cls.original_user
-		frappe.db.delete("LMS Quiz Violation Log")
+		# Resolved before the submissions go, because that is what identifies the rows.
+		# These classes run outside a transaction, so an unfiltered delete here does not
+		# roll back: it truncates the table on whatever site the suite is pointed at.
+		submissions = frappe.get_all("LMS Quiz Submission", filters={"quiz": cls.quiz.name}, pluck="name")
+		if submissions:
+			frappe.db.delete("LMS Quiz Violation Log", {"quiz_submission": ("in", submissions)})
 		frappe.db.delete("LMS Quiz Submission", {"quiz": cls.quiz.name})
 		frappe.db.delete("LMS Quiz", cls.quiz.name)
 		frappe.db.delete("LMS Question", cls.question.name)
