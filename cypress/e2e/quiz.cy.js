@@ -172,47 +172,52 @@ describe("Quiz", () => {
 			cy.visit(`/lms/quiz/${proctoredQuizName}`);
 			cy.closeOnboardingModal();
 
-			cy.contains("After 3 violations").should("be.visible");
+			// The rules card runs past the fold on a 660px viewport, so the row has to
+			// be brought into view before it can be seen.
+			cy.contains("After 3 violations")
+				.scrollIntoView()
+				.should("be.visible");
 		});
 
 		it("starts face detection once camera access is granted", () => {
 			cy.login();
 			cy.visit(`/lms/quiz/${proctoredQuizName}`, {
 				onBeforeLoad(win) {
-					// Stub getUserMedia so the proctoring setup monitor gets a
-					// stream without requiring a real camera in CI.
-					const mockTrack = {
-						addEventListener: () => {},
-						stop: () => {},
-					};
-					const mockStream = {
-						getVideoTracks: () => [mockTrack],
-						getTracks: () => [mockTrack],
-					};
-					// navigator.mediaDevices exists only in a secure context. CI serves
-					// the app over plain http, so the object has to be created before
-					// there is anything to stub.
-					if (!win.navigator.mediaDevices) {
-						Object.defineProperty(win.navigator, "mediaDevices", {
-							value: {},
-							configurable: true,
-							writable: true,
-						});
-					}
-					cy.stub(
-						win.navigator.mediaDevices,
-						"getUserMedia"
-					).resolves(mockStream);
+					// A real MediaStream, not a stand-in object: the monitor assigns what
+					// getUserMedia returns straight to video.srcObject, and that setter
+					// rejects anything that is not a MediaStream — which threw before the
+					// component could leave its loading state. A canvas gives a genuine
+					// stream, and it paints, so the video element actually reaches
+					// readyState 2 and face detection runs against blank frames.
+					const canvas = win.document.createElement("canvas");
+					canvas.width = 640;
+					canvas.height = 480;
+					const ctx = canvas.getContext("2d");
+					ctx.fillStyle = "#888888";
+					ctx.fillRect(0, 0, canvas.width, canvas.height);
+					const stream = canvas.captureStream(30);
+
+					// navigator.mediaDevices exists only in a secure context, and the app
+					// is served over plain http here, so the whole object is defined
+					// rather than stubbed: cy.stub() replaces an existing property, and on
+					// http there is no getUserMedia to replace. Defining an own property
+					// also shadows the prototype getter where it does exist.
+					Object.defineProperty(win.navigator, "mediaDevices", {
+						value: { getUserMedia: () => Promise.resolve(stream) },
+						configurable: true,
+						writable: true,
+					});
 				},
 			});
 			cy.closeOnboardingModal();
 
-			// Accepting the stream moves the monitor from "Loading camera" to asking
-			// for a face, which is as far as CI can go: Start Quiz unlocks on a
-			// detected face, and a stubbed stream carries no frames to detect one in.
-			cy.contains("Position your face in the frame", {
+			// Accepting the stream moves the monitor off "Loading camera" and into
+			// detection, which is as far as CI can go: Start Quiz unlocks on a face,
+			// and a painted canvas has none. Either detection label counts — which one
+			// shows depends on whether the 800ms detection pass has run yet.
+			cy.contains(/Position your face in the frame|No face detected/, {
 				timeout: 20000,
-			}).should("be.visible");
+			}).should("exist");
 			cy.button("Start Quiz").should("be.disabled");
 		});
 	});
