@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Learning VERSION\n"
 "Report-Msgid-Bugs-To: jannat@frappe.io\n"
-"POT-Creation-Date: 2026-08-21 16:22+0000\n"
-"PO-Revision-Date: 2026-08-21 16:22+0000\n"
+"POT-Creation-Date: 2026-08-29 00:18+0000\n"
+"PO-Revision-Date: 2026-08-29 00:18+0000\n"
 "Last-Translator: jannat@frappe.io\n"
 "Language-Team: jannat@frappe.io\n"
 "MIME-Version: 1.0\n"
@@ -482,7 +482,7 @@ msgstr ""
 msgid "Allow users to view their past quiz attempts."
 msgstr ""
 
-#: lms/lms/user.py:36 lms/lms/user.py:78 lms/templates/signup-form.html:226
+#: lms/lms/user.py:36 lms/lms/user.py:78 lms/templates/signup-form.html:244
 msgid "Already Registered"
 msgstr ""
 
@@ -1200,7 +1200,7 @@ msgid "Build and manage courses, chapters, and lessons"
 msgstr ""
 
 #. Option for the 'User Category' (Select) field in DocType 'User'
-#: lms/fixtures/custom_field.json lms/templates/signup-form.html:30
+#: lms/fixtures/custom_field.json lms/templates/signup-form.html:40
 msgid "Business Owner"
 msgstr ""
 
@@ -1265,7 +1265,7 @@ msgstr ""
 #: frontend/src/pages/Forms/NewCourseForm.vue:18
 #: lms/lms/doctype/lms_batch/lms_batch.json
 #: lms/lms/doctype/lms_category/lms_category.json
-#: lms/lms/doctype/lms_course/lms_course.json lms/templates/signup-form.html:29
+#: lms/lms/doctype/lms_course/lms_course.json lms/templates/signup-form.html:39
 msgid "Category"
 msgstr ""
 
@@ -3046,7 +3046,7 @@ msgstr ""
 #: frontend/src/pages/Forms/MemberForm.vue:14
 #: frontend/src/pages/JobApplications.vue:292
 #: lms/lms/doctype/lms_settings/lms_settings.json
-#: lms/templates/signup-form.html:17
+#: lms/templates/signup-form.html:27
 msgid "Email"
 msgstr ""
 
@@ -3129,7 +3129,7 @@ msgid "Embedded content"
 msgstr ""
 
 #. Option for the 'User Category' (Select) field in DocType 'User'
-#: lms/fixtures/custom_field.json lms/templates/signup-form.html:32
+#: lms/fixtures/custom_field.json lms/templates/signup-form.html:42
 msgid "Employee"
 msgstr ""
 
@@ -3816,7 +3816,7 @@ msgstr ""
 #: frontend/src/components/Modals/NewMemberModal.vue:29
 #: frontend/src/pages/Forms/MemberForm.vue:24
 #: frontend/src/pages/Forms/ProfileEditForm.vue:28
-#: frontend/src/pages/Forms/ProfileEditForm.vue:164
+#: frontend/src/pages/Forms/ProfileEditForm.vue:166
 msgid "First Name"
 msgstr ""
 
@@ -3876,7 +3876,7 @@ msgid "Freelance"
 msgstr ""
 
 #. Option for the 'User Category' (Select) field in DocType 'User'
-#: lms/fixtures/custom_field.json lms/templates/signup-form.html:34
+#: lms/fixtures/custom_field.json lms/templates/signup-form.html:44
 msgid "Freelancer/Just looking"
 msgstr ""
 
@@ -3916,7 +3916,7 @@ msgstr ""
 #: frontend/src/pages/JobApplications.vue:286
 #: lms/lms/doctype/course_evaluator/course_evaluator.json
 #: lms/lms/doctype/lms_program_member/lms_program_member.json
-#: lms/templates/signup-form.html:11
+#: lms/templates/signup-form.html:21
 msgid "Full Name"
 msgstr ""
 
@@ -3928,7 +3928,7 @@ msgstr ""
 msgid "Full Time"
 msgstr ""
 
-#: lms/templates/signup-form.html:171
+#: lms/templates/signup-form.html:181
 msgid "Full name is required."
 msgstr ""
 
@@ -4122,7 +4122,7 @@ msgstr ""
 msgid "Green"
 msgstr ""
 
-#: lms/templates/signup-form.html:63
+#: lms/templates/signup-form.html:73
 msgid "Have an account? Login"
 msgstr ""
 
@@ -4625,7 +4625,7 @@ msgstr ""
 msgid "Items in Sidebar"
 msgstr ""
 
-#: lms/templates/signup-form.html:12
+#: lms/templates/signup-form.html:22
 msgid "Jane Doe"
 msgstr ""
 
@@ -5283,7 +5283,7 @@ msgstr ""
 
 #: frontend/src/components/NoPermission.vue:26
 #: frontend/src/components/QuizBlock.vue:9 frontend/src/pages/Lesson.vue:88
-#: lms/templates/signup-form.html:4
+#: lms/templates/signup-form.html:14
 msgid "Login"
 msgstr ""
 
@@ -5350,7 +5350,7 @@ msgid "Managed by"
 msgstr ""
 
 #. Option for the 'User Category' (Select) field in DocType 'User'
-#: lms/fixtures/custom_field.json lms/templates/signup-form.html:31
+#: lms/fixtures/custom_field.json lms/templates/signup-form.html:41
 msgid "Manager (Sales/Marketing/Customer)"
 msgstr ""
 
@@ -6463,7 +6463,7 @@ msgid "Other"
 msgstr ""
 
 #. Option for the 'User Category' (Select) field in DocType 'User'
-#: lms/fixtures/custom_field.json lms/templates/signup-form.html:35
+#: lms/fixtures/custom_field.json lms/templates/signup-form.html:45
 msgid "Others"
 msgstr ""
 
@@ -6778,7 +6778,7 @@ msgstr ""
 msgid "Play video"
 msgstr ""
 
-#: lms/templates/signup-form.html:186
+#: lms/templates/signup-form.html:196
 msgid "Please accept the terms to continue."
 msgstr ""
 
@@ -6838,7 +6838,7 @@ msgstr ""
 msgid "Please enter a valid URL."
 msgstr ""
 
-#: lms/templates/signup-form.html:176
+#: lms/templates/signup-form.html:186
 msgid "Please enter a valid email."
 msgstr ""
 
@@ -6850,7 +6850,7 @@ msgstr ""
 msgid "Please enter a valid timestamp"
 msgstr ""
 
-#: frontend/src/pages/Forms/ProfileEditForm.vue:167
+#: frontend/src/pages/Forms/ProfileEditForm.vue:169
 msgid "Please fill the mandatory fields: {0}"
 msgstr ""
 
@@ -6923,7 +6923,7 @@ msgstr ""
 msgid "Please select a Zoom account for this batch."
 msgstr ""
 
-#: lms/templates/signup-form.html:181
+#: lms/templates/signup-form.html:191
 msgid "Please select a category."
 msgstr ""
 
@@ -7201,7 +7201,7 @@ msgstr ""
 msgid "Profile Image"
 msgstr ""
 
-#: frontend/src/pages/Forms/ProfileEditForm.vue:194
+#: frontend/src/pages/Forms/ProfileEditForm.vue:196
 msgid "Profile updated successfully"
 msgstr ""
 
@@ -8395,7 +8395,7 @@ msgstr ""
 msgid "Sign Up is disabled"
 msgstr ""
 
-#: lms/templates/signup-form.html:60
+#: lms/templates/signup-form.html:70
 msgid "Sign up"
 msgstr ""
 
@@ -8633,7 +8633,7 @@ msgstr ""
 #: frontend/src/pages/Forms/MemberForm.vue:44
 #: frontend/src/pages/ProfileRoles.vue:18 lms/fixtures/custom_field.json
 #: lms/lms/doctype/lms_enrollment/lms_enrollment.json
-#: lms/templates/signup-form.html:33
+#: lms/templates/signup-form.html:43
 msgid "Student"
 msgstr ""
 
@@ -8737,7 +8737,7 @@ msgstr ""
 msgid "Submit your resume to proceed with your application for this position. Upon submission, it will be shared with the job poster."
 msgstr ""
 
-#: lms/templates/signup-form.html:214
+#: lms/templates/signup-form.html:224
 msgid "Success"
 msgstr ""
 
@@ -9764,7 +9764,7 @@ msgid "User"
 msgstr ""
 
 #. Label of the user_category (Select) field in DocType 'User'
-#: lms/fixtures/custom_field.json lms/templates/signup-form.html:25
+#: lms/fixtures/custom_field.json lms/templates/signup-form.html:35
 msgid "User Category"
 msgstr ""
 
@@ -10089,7 +10089,7 @@ msgstr ""
 msgid "You are already enrolled for this course."
 msgstr ""
 
-#: lms/templates/signup-form.html:5
+#: lms/templates/signup-form.html:15
 msgid "You are already registered. {0} instead."
 msgstr ""
 
@@ -10750,7 +10750,7 @@ msgstr ""
 msgid "here"
 msgstr ""
 
-#: lms/templates/signup-form.html:19
+#: lms/templates/signup-form.html:29
 msgid "jane@example.com"
 msgstr ""
 
